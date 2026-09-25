@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Jakhar Tour Travels | Cab Fare Calculator</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#071a35,#0b3b70 45%,#eef5fb 45%);color:#142033;min-height:100vh}
+.container{max-width:1120px;margin:auto;padding:28px 16px}
+.hero{background:linear-gradient(135deg,#0b4f91,#0874c9);color:#fff;border-radius:24px;padding:26px;box-shadow:0 18px 45px #001b3d55;margin-bottom:18px}
+.hero h1{margin:0 0 7px;font-size:30px}.hero p{margin:0;opacity:.9}
+.panel{background:#fff;border-radius:22px;padding:20px;box-shadow:0 14px 35px #0b234022;margin-bottom:18px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field label{display:block;font-weight:700;font-size:13px;margin:0 0 6px;color:#34445a}
+.inputwrap{position:relative}
+input{width:100%;padding:14px 14px;border:1px solid #d6dee9;border-radius:12px;font-size:15px;outline:none}
+input:focus{border-color:#1684d8;box-shadow:0 0 0 3px #1684d820}
+.suggestions{position:absolute;left:0;right:0;top:52px;background:#fff;border:1px solid #dbe3ed;border-radius:10px;z-index:1000;box-shadow:0 10px 25px #0002;overflow:hidden;display:none}
+.suggestion{padding:11px 13px;cursor:pointer;font-size:14px}.suggestion:hover{background:#eef6ff}
+.triprow{display:flex;gap:10px;margin:15px 0}.trip{flex:1;padding:12px;border:1px solid #d8e0ea;border-radius:12px;text-align:center;cursor:pointer;font-weight:700}.trip.active{background:#0b74c9;color:#fff;border-color:#0b74c9}
+.actions{display:flex;gap:10px}.btn{border:0;border-radius:12px;padding:14px 20px;font-weight:800;font-size:15px;cursor:pointer}.primary{background:#0b74c9;color:#fff;flex:1}.secondary{background:#edf2f7;color:#26364b}
+#status{display:none;margin:14px 0;padding:12px 14px;border-radius:11px;background:#eef6ff;color:#14568c;font-weight:600}
+#map{height:390px;border-radius:16px;margin-top:15px;overflow:hidden}
+.routeinfo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.info{background:#f3f7fb;border-radius:14px;padding:15px}.info span{display:block;color:#718096;font-size:12px}.info b{font-size:21px}
+.cars{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.car{border:2px solid #e3e9f0;border-radius:16px;overflow:hidden;background:#fff;cursor:pointer;transition:.18s;position:relative}
+.car:hover{transform:translateY(-2px);box-shadow:0 9px 22px #102a4318}
+.car.selected{border-color:#0b74c9;box-shadow:0 0 0 3px #0b74c91a}
+.car img{width:100%;height:125px;object-fit:cover;display:block;background:#eef2f5}
+.carbody{padding:12px}.car h3{margin:0 0 8px;font-size:16px}.rate{font-size:18px;font-weight:900;color:#0b74c9}.wait{font-size:12px;color:#69788c;margin-top:5px}
+.check{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:50%;background:#fff;color:#0b74c9;display:none;text-align:center;line-height:26px;font-weight:900;box-shadow:0 2px 8px #0002}.selected .check{display:block}
+.book-now{width:100%;margin-top:10px;border:0;border-radius:10px;padding:10px 12px;background:#0b74c9;color:#fff;font-weight:800;cursor:pointer}.book-now:hover{background:#075da5}
+.selectedbox{display:none;margin-top:14px;padding:14px;border-radius:14px;background:#edf7ff;border:1px solid #bfe2fb}.selectedbox.show{display:block}
+@media(max-width:900px){.cars{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:650px){.formgrid,.routeinfo{grid-template-columns:1fr}.cars{grid-template-columns:repeat(2,1fr)}.actions{flex-direction:column}}
+
+/* Booking section */
+.booking-section{margin-top:24px;padding:24px;border-radius:24px;background:rgba(255,255,255,.96);box-shadow:0 18px 50px rgba(15,23,42,.12);color:#172033}
+.booking-section[hidden]{display:none!important}
+.booking-head{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.booking-head h2{margin:0;font-size:24px}
+.booking-badge{background:#e8f2ff;color:#1457c5;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800}
+.booking-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.booking-grid .full{grid-column:1/-1}
+.booking-grid label{display:flex;flex-direction:column;gap:7px;font-weight:700;font-size:13px}
+.booking-grid input,.booking-grid select,.booking-grid textarea{width:100%;border:1px solid #d9e1ef;border-radius:12px;padding:12px 13px;font:inherit;background:#fff;color:#172033;box-sizing:border-box}
+.booking-grid textarea{min-height:84px;resize:vertical}
+.payment-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:8px}
+.payment-option{border:1px solid #d9e1ef;border-radius:15px;padding:15px;cursor:pointer;background:#fff;display:flex;gap:10px;align-items:center;transition:.2s}
+.payment-option input{accent-color:#1463ff}
+.payment-option:has(input:checked){border-color:#1463ff;background:#eef5ff;box-shadow:0 0 0 2px rgba(20,99,255,.10)}
+.payment-option strong{display:block}
+.payment-option small{color:#65728a}
+.booking-summary{margin-top:18px;border:1px dashed #b9c7dd;border-radius:16px;padding:16px;background:#f8fbff}
+.booking-summary-row{display:flex;justify-content:space-between;gap:16px;padding:6px 0;font-size:14px}
+.booking-summary-row.total{border-top:1px solid #dbe5f3;margin-top:8px;padding-top:12px;font-size:19px;font-weight:900}
+.booking-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.booking-actions button{border:0;border-radius:12px;padding:13px 18px;font-weight:800;cursor:pointer}
+.confirm-btn{background:#1463ff;color:white}
+.secondary-btn{background:#eaf0f8;color:#20304b}
+.confirmation{margin-top:20px;border:1px solid #b8e5cc;background:#effcf4;border-radius:18px;padding:20px;color:#14532d}
+.confirmation[hidden]{display:none!important}
+.confirmation h3{margin:0 0 8px;font-size:22px}
+.booking-id{display:inline-block;background:#fff;border:1px solid #b8e5cc;border-radius:10px;padding:9px 12px;font-weight:900;letter-spacing:1px;margin:8px 0 14px}
+.receipt{background:white;border-radius:14px;padding:14px;margin-top:12px;color:#172033}
+@media(max-width:650px){.booking-grid,.payment-options{grid-template-columns:1fr}.booking-section{padding:18px}.booking-head h2{font-size:21px}}
+
+.topnav{display:flex;justify-content:flex-end;margin:-8px 0 14px}.my-bookings-btn{border:0;border-radius:12px;padding:11px 16px;background:#fff;color:#0b5fae;font-weight:900;cursor:pointer;box-shadow:0 8px 20px #001b3d22}.tracking-section{margin-top:24px;padding:24px;border-radius:24px;background:#fff;box-shadow:0 18px 50px rgba(15,23,42,.12)}.tracking-section[hidden]{display:none!important}.track-form{display:flex;gap:10px}.track-form input{flex:1}.track-card{margin-top:16px;border:1px solid #dbe5f1;border-radius:16px;padding:16px;background:#f8fbff}.status-pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;background:#fff3cd;color:#856404}.status-pill.confirmed{background:#e8f8ef;color:#137333}.empty-bookings{text-align:center;padding:20px;color:#68778d}@media(max-width:650px){.track-form{flex-direction:column}}
+
+.admin-btn{border:0;border-radius:12px;padding:11px 16px;background:#0b74c9;color:#fff;font-weight:900;cursor:pointer;box-shadow:0 8px 20px #001b3d22}.topnav{gap:10px;flex-wrap:wrap}
+.admin-section{margin-top:24px;padding:24px;border-radius:24px;background:#fff;box-shadow:0 18px 50px rgba(15,23,42,.12)}.admin-section[hidden]{display:none!important}.admin-toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:16px 0}.admin-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.admin-stat{background:#f6f9fc;border:1px solid #e1e8f0;border-radius:14px;padding:13px}.admin-stat span{display:block;font-size:11px;color:#708096}.admin-stat b{font-size:22px}.admin-filters{display:grid;grid-template-columns:1.2fr .8fr .8fr;gap:10px;margin:14px 0}.admin-table-wrap{overflow:auto;border:1px solid #e1e8f0;border-radius:14px}.admin-table{width:100%;border-collapse:collapse;min-width:980px}.admin-table th,.admin-table td{padding:11px 10px;border-bottom:1px solid #e8edf3;text-align:left;font-size:13px;vertical-align:top}.admin-table th{background:#f6f9fc;color:#53647a;font-size:12px}.admin-table tr:hover td{background:#fbfdff}.status-select,.driver-select{border:1px solid #d5deea;border-radius:9px;padding:8px;background:#fff}.admin-action{border:0;border-radius:9px;padding:8px 10px;background:#0b74c9;color:#fff;font-weight:800;cursor:pointer}.admin-action.danger{background:#d64545}.admin-login{max-width:420px;margin:20px auto;padding:22px;border:1px solid #dfe7f0;border-radius:16px;background:#f8fbff}.admin-login button{width:100%;margin-top:10px}.admin-note{font-size:12px;color:#69788c;margin-top:8px}.status-pill.pending{background:#fff3cd;color:#856404}.status-pill.confirmed{background:#e8f8ef;color:#137333}.status-pill.completed{background:#e7f0ff;color:#1457c5}.status-pill.cancelled{background:#fdecec;color:#a61b1b}
+@media(max-width:900px){.admin-stats{grid-template-columns:repeat(3,1fr)}.admin-filters{grid-template-columns:1fr 1fr}}@media(max-width:650px){.admin-stats{grid-template-columns:repeat(2,1fr)}.admin-filters{grid-template-columns:1fr}.admin-section{padding:18px}}
+
+.driver-btn{border:0;border-radius:12px;padding:11px 16px;background:#0f8a62;color:#fff;font-weight:900;cursor:pointer;box-shadow:0 8px 20px #001b3d22}
+.driver-section{margin-top:24px;padding:24px;border-radius:24px;background:#fff;box-shadow:0 18px 50px rgba(15,23,42,.12)}.driver-section[hidden]{display:none!important}
+.driver-login-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:650px}.driver-card{border:1px solid #dfe7f0;border-radius:18px;padding:18px;background:#f8fbff}.driver-card h3{margin-top:0}.driver-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.driver-form .full{grid-column:1/-1}.driver-form label{display:flex;flex-direction:column;gap:7px;font-weight:700;font-size:13px}.driver-form input,.driver-form select,.driver-form textarea{width:100%;border:1px solid #d9e1ef;border-radius:12px;padding:12px 13px;font:inherit;background:#fff;box-sizing:border-box}.driver-form textarea{min-height:78px;resize:vertical}.photo-upload{border:2px dashed #bfd0e3;border-radius:16px;padding:14px;background:#fff;text-align:center}.photo-preview{width:100px;height:100px;border-radius:50%;object-fit:cover;display:none;margin:10px auto;border:4px solid #e6eef7}.driver-dashboard{margin-top:18px}.driver-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.driver-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.driver-stat{background:#f6f9fc;border:1px solid #e1e8f0;border-radius:14px;padding:13px}.driver-stat span{display:block;font-size:11px;color:#708096}.driver-stat b{font-size:22px}.driver-toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:14px 0}.driver-bookings{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.driver-booking{border:1px solid #dfe7f0;border-radius:16px;padding:16px;background:#fff}.driver-booking.nearby{border:2px solid #0f8a62;box-shadow:0 0 0 4px #0f8a6214}.near-badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8f8f2;color:#0f7656;font-size:11px;font-weight:900}.driver-modal{position:fixed;inset:0;background:rgba(4,16,32,.62);display:flex;align-items:center;justify-content:center;z-index:9999;padding:18px}.driver-modal[hidden]{display:none!important}.driver-modal-box{max-width:480px;width:100%;background:#fff;border-radius:22px;padding:22px;box-shadow:0 25px 70px #0005}.driver-modal-box h3{margin-top:0}.driver-location{padding:12px 14px;border-radius:12px;background:#edf9f4;color:#126448;font-weight:700;margin:10px 0}.profile-mini{display:flex;align-items:center;gap:12px}.profile-mini img{width:54px;height:54px;border-radius:50%;object-fit:cover;border:3px solid #e5edf5}.admin-drivers,.admin-customers{margin-top:22px}.mini-table{width:100%;border-collapse:collapse;min-width:760px}.mini-table th,.mini-table td{padding:10px;border-bottom:1px solid #e8edf3;text-align:left;font-size:13px;vertical-align:top}.mini-table th{background:#f6f9fc;color:#53647a}.photo-thumb{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #e3eaf2}.driver-alert-count{font-weight:900;color:#0f8a62}.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}.admin-tab{border:1px solid #d6e0ea;background:#f7faff;border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer}.admin-tab.active{background:#0b74c9;color:#fff;border-color:#0b74c9}
+@media(max-width:900px){.driver-bookings{grid-template-columns:1fr}.driver-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.driver-login-grid,.driver-form{grid-template-columns:1fr}.driver-form .full{grid-column:auto}.driver-section{padding:18px}}
+
+/* Premium travel theme */
+body{background:radial-gradient(circle at 10% 10%,#ffe8c2 0,#ffe8c200 28%),radial-gradient(circle at 90% 15%,#bcecff 0,#bcecff00 30%),linear-gradient(135deg,#071a35 0%,#0b3b70 38%,#f7fbff 38%,#f7fbff 100%);overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:22px 22px;z-index:-1}
+.container{max-width:1180px;padding:20px 16px 50px}
+.topnav{position:sticky;top:10px;z-index:5000;padding:8px;border-radius:18px;background:rgba(255,255,255,.82);backdrop-filter:blur(16px);box-shadow:0 10px 30px #001b3d18}
+.hero{position:relative;overflow:hidden;min-height:360px;display:flex;flex-direction:column;justify-content:center;padding:52px 46px;border-radius:30px;background:linear-gradient(120deg,rgba(4,27,58,.96),rgba(9,91,157,.82)),url('https://loremflickr.com/1400/700/india,travel') center/cover;box-shadow:0 25px 70px #001b3d55}
+.hero:after{content:"✈  🕌  🏰  🏔  🏖  🚕";position:absolute;right:26px;bottom:24px;font-size:34px;letter-spacing:10px;opacity:.82;filter:drop-shadow(0 5px 10px #0005)}
+.hero h1{font-size:clamp(34px,6vw,62px);line-height:1.02;max-width:760px;text-shadow:0 6px 25px #0006}.hero p{font-size:18px;max-width:680px;line-height:1.6}.hero .hero-kicker{display:inline-flex;width:max-content;padding:8px 13px;border-radius:999px;background:#ffffff22;border:1px solid #ffffff35;font-size:12px;font-weight:900;letter-spacing:1px;margin-bottom:14px}
+.panel,.booking-section,.tracking-section,.admin-section,.driver-section{border:1px solid rgba(255,255,255,.65);box-shadow:0 18px 55px rgba(11,35,64,.13)}
+.panel:first-of-type{margin-top:18px}
+.travel-strip{margin:18px 0 24px;padding:20px;border-radius:24px;background:linear-gradient(135deg,#fff8ef,#eef8ff);border:1px solid #fff;box-shadow:0 15px 40px #112d4814}
+.travel-strip-head{display:flex;align-items:end;justify-content:space-between;gap:15px;margin-bottom:14px}.travel-strip h2{margin:0;font-size:24px}.travel-strip p{margin:4px 0 0;color:#64748b;font-size:13px}
+.destination-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.destination-card{position:relative;min-height:145px;border-radius:18px;overflow:hidden;background:#123;cursor:pointer;box-shadow:0 8px 24px #102a431c;transition:.25s}.destination-card:hover{transform:translateY(-5px) scale(1.015);box-shadow:0 16px 34px #102a4330}.destination-card img{width:100%;height:100%;min-height:145px;object-fit:cover;display:block;transition:.35s}.destination-card:hover img{transform:scale(1.07)}.destination-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 28%,rgba(2,12,28,.88) 100%)}.destination-card div{position:absolute;left:12px;right:12px;bottom:11px;z-index:2;color:#fff}.destination-card strong{display:block;font-size:14px}.destination-card span{font-size:11px;opacity:.84}
+.feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:0 0 24px}.feature-card{padding:20px;border-radius:20px;background:#ffffffd9;backdrop-filter:blur(10px);border:1px solid #fff;box-shadow:0 12px 35px #0b234018}.feature-card b{display:block;font-size:17px;margin:8px 0 4px}.feature-card span{font-size:13px;color:#68778d;line-height:1.5}.feature-icon{font-size:28px}
+.footer-travel{margin-top:25px;padding:28px;border-radius:24px;background:linear-gradient(135deg,#061b38,#0b4f91);color:#fff;text-align:center;box-shadow:0 18px 50px #001b3d38}.footer-travel h2{margin:0 0 8px}.footer-travel p{margin:0;color:#dbeafe}
+@media(max-width:1000px){.destination-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:700px){.hero{min-height:390px;padding:34px 24px}.hero:after{font-size:23px;letter-spacing:4px}.destination-grid{grid-template-columns:repeat(2,1fr)}.feature-row{grid-template-columns:1fr}.travel-strip-head{align-items:start;flex-direction:column}.topnav{justify-content:center}.topnav button{flex:1;min-width:30%}}
+@media(max-width:420px){.container{padding-left:10px;padding-right:10px}.hero{border-radius:22px;padding:28px 18px}.hero h1{font-size:34px}.hero p{font-size:15px}.destination-grid{gap:8px}.destination-card{min-height:125px}.destination-card img{min-height:125px}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="topnav"><button type="button" class="my-bookings-btn" id="myBookingsBtn">📋 My Bookings</button><button type="button" class="driver-btn" id="driverBtn">🚗 Driver Panel</button><button type="button" class="admin-btn" id="adminBtn">⚙️ Admin Panel</button></div>
+<section class="hero"><span class="hero-kicker">INDIA • TAXI • TOURS • TRAVELS</span><h1>🚕 Explore India.<br>We’ll Drive You There.</h1><p>Comfortable cabs, transparent fares and memorable journeys — from Jaipur streets to India’s most beautiful destinations.</p></section>
+<section class="feature-row">
+<div class="feature-card"><span class="feature-icon">🛡️</span><b>Safe & Trusted Travel</b><span>Verified driver workflow, booking ID and trip tracking designed for peace of mind.</span></div>
+<div class="feature-card"><span class="feature-icon">💰</span><b>Transparent Fare</b><span>Choose your car, see the estimated distance and fare before booking.</span></div>
+<div class="feature-card"><span class="feature-icon">📍</span><b>Door-to-Door Pickup</b><span>Enter your pickup and destination and plan your complete road journey.</span></div>
+</section>
+<section class="travel-strip"><div class="travel-strip-head"><div><h2>🇮🇳 Dream Destinations</h2><p>15+ places to inspire your next road trip.</p></div><strong style="color:#0b74c9">Scroll. Explore. Travel. ✨</strong></div>
+<div class="destination-grid">
+<a class="destination-card" href="#bookingSection" data-place="Jaipur"><img loading="lazy" src="https://loremflickr.com/800/600/jaipur,india" alt="Jaipur"><div><strong>Jaipur</strong><span>Pink City • Rajasthan</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Agra"><img loading="lazy" src="https://loremflickr.com/800/600/tajmahal,agra" alt="Taj Mahal"><div><strong>Agra</strong><span>Taj Mahal • Uttar Pradesh</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Udaipur"><img loading="lazy" src="https://loremflickr.com/800/600/udaipur,india" alt="Udaipur"><div><strong>Udaipur</strong><span>Lakes • Rajasthan</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Jaisalmer"><img loading="lazy" src="https://loremflickr.com/800/600/jaisalmer,india" alt="Jaisalmer"><div><strong>Jaisalmer</strong><span>Golden City • Rajasthan</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Jodhpur"><img loading="lazy" src="https://loremflickr.com/800/600/jodhpur,india" alt="Jodhpur"><div><strong>Jodhpur</strong><span>Blue City • Rajasthan</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Mount Abu"><img loading="lazy" src="https://loremflickr.com/800/600/mountabu,india" alt="Mount Abu"><div><strong>Mount Abu</strong><span>Hill Station • Rajasthan</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Delhi"><img loading="lazy" src="https://loremflickr.com/800/600/indiagate,delhi" alt="Delhi"><div><strong>Delhi</strong><span>Capital • Heritage</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Amritsar"><img loading="lazy" src="https://loremflickr.com/800/600/goldentemple,amritsar" alt="Amritsar"><div><strong>Amritsar</strong><span>Golden Temple • Punjab</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Mumbai"><img loading="lazy" src="https://loremflickr.com/800/600/gatewayofindia,mumbai" alt="Mumbai"><div><strong>Mumbai</strong><span>Gateway • Maharashtra</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Goa"><img loading="lazy" src="https://loremflickr.com/800/600/goa,india" alt="Goa"><div><strong>Goa</strong><span>Beaches • Konkan</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Varanasi"><img loading="lazy" src="https://loremflickr.com/800/600/varanasi,india" alt="Varanasi"><div><strong>Varanasi</strong><span>Ghats • Uttar Pradesh</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Rishikesh"><img loading="lazy" src="https://loremflickr.com/800/600/rishikesh,india" alt="Rishikesh"><div><strong>Rishikesh</strong><span>Ganga • Uttarakhand</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Manali"><img loading="lazy" src="https://loremflickr.com/800/600/manali,india" alt="Manali"><div><strong>Manali</strong><span>Mountains • Himachal</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Srinagar"><img loading="lazy" src="https://loremflickr.com/800/600/srinagar,india" alt="Srinagar"><div><strong>Srinagar</strong><span>Valleys • Kashmir</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Kolkata"><img loading="lazy" src="https://loremflickr.com/800/600/kolkata,india" alt="Kolkata"><div><strong>Kolkata</strong><span>Culture • West Bengal</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Hyderabad"><img loading="lazy" src="https://loremflickr.com/800/600/hyderabad,india" alt="Hyderabad"><div><strong>Hyderabad</strong><span>Charminar • Telangana</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Kochi"><img loading="lazy" src="https://loremflickr.com/800/600/kochi,india" alt="Kochi"><div><strong>Kochi</strong><span>Backwaters • Kerala</span></div></a>
+<a class="destination-card" href="#bookingSection" data-place="Mysore"><img loading="lazy" src="https://loremflickr.com/800/600/mysore,india" alt="Mysore"><div><strong>Mysore</strong><span>Palace • Karnataka</span></div></a>
+</div></section>
+
+<section class="panel">
+<div class="formgrid">
+<div class="field"><label>Pickup Location</label><div class="inputwrap"><input id="pickup" autocomplete="off" placeholder="e.g. Jaipur Railway Station"><div id="pickSug" class="suggestions"></div></div></div>
+<div class="field"><label>Drop Location</label><div class="inputwrap"><input id="drop" autocomplete="off" placeholder="e.g. Jaipur Airport"><div id="dropSug" class="suggestions"></div></div></div>
+</div>
+
+<div class="triprow">
+<div class="trip active" data-trip="1">ONE WAY</div>
+<div class="trip" data-trip="2">ROUND TRIP</div>
+</div>
+
+<div class="actions">
+<button class="btn primary" id="calc" type="button">📍 Calculate Route & Fare</button>
+<button class="btn secondary" id="clear" type="button">Clear</button>
+</div>
+<div id="status"></div>
+<div id="map"></div>
+
+<div class="routeinfo">
+<div class="info"><span>Driving Distance</span><b id="distance">—</b></div>
+<div class="info"><span>Travel Time</span><b id="duration">—</b></div>
+</div>
+</section>
+
+<section class="panel">
+<h2 style="margin-top:0">Choose Your Car</h2>
+<div class="cars" id="cars"></div>
+<div class="selectedbox" id="selectedBox"></div>
+</section>
+</div>
+
+
+
+<section class="tracking-section" id="trackingSection" hidden>
+  <div class="booking-head">
+    <div>
+      <h2 style="margin:0">My Bookings</h2>
+      <p style="margin:6px 0 0;color:#65728a">Track your booking using the Booking ID.</p>
+    </div>
+  </div>
+  <div class="track-form">
+    <input id="trackBookingId" placeholder="Enter Booking ID e.g. JTT-260625-1234">
+    <button type="button" class="confirm-btn" id="trackBtn">Track Booking</button>
+  </div>
+  <div id="trackingResult"></div>
+</section>
+
+
+<section class="driver-section" id="driverSection" hidden>
+  <div class="booking-head">
+    <div><h2 style="margin:0">Driver Panel</h2><p style="margin:6px 0 0;color:#65728a">Driver ID banaye, profile complete karein aur apne area ki bookings dekhein.</p></div>
+    <span class="booking-badge">DRIVER OPERATIONS</span>
+  </div>
+
+  <div id="driverAuth">
+    <div class="driver-card">
+      <h3>🚗 Driver Registration</h3>
+      <p style="color:#65728a;font-size:13px">Profile photo mandatory hai. Registration ke baad unique Driver ID milegi.</p>
+      <form id="driverRegisterForm" class="driver-form">
+        <label>Full Name *<input id="driverName" required placeholder="Driver full name"></label>
+        <label>Mobile Number *<input id="driverMobile" required type="tel" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile"></label>
+        <label>Email<input id="driverEmail" type="email" placeholder="driver@email.com"></label>
+        <label>Vehicle Number *<input id="driverVehicleNo" required placeholder="RJ14AB1234"></label>
+        <label>Vehicle Type *<select id="driverVehicleType" required><option value="">Select vehicle</option><option>Maruti Swift</option><option>Maruti Dzire</option><option>Toyota Etios</option><option>Maruti Ertiga</option><option>Toyota Innova</option></select></label>
+        <label>Driving Licence No. *<input id="driverLicense" required placeholder="Licence number"></label>
+        <label class="full">Address *<textarea id="driverAddress" required placeholder="Full address"></textarea></label>
+        <label class="full">Profile Photo *
+          <div class="photo-upload"><input id="driverPhoto" required type="file" accept="image/*"><img id="driverPhotoPreview" class="photo-preview" alt="Driver photo preview"><small style="color:#65728a">JPG/PNG/WebP • profile photo compulsory</small></div>
+        </label>
+        <label>Login PIN *<input id="driverPin" required type="password" minlength="4" maxlength="8" inputmode="numeric" placeholder="4-8 digit PIN"></label>
+        <div style="display:flex;align-items:end"><button class="confirm-btn" type="submit" style="width:100%;border:0;border-radius:12px;padding:13px;font-weight:800;cursor:pointer">Create Driver ID</button></div>
+      </form>
+      <div id="driverRegisterResult" style="margin-top:14px"></div>
+    </div>
+    <div class="driver-card" style="margin-top:14px">
+      <h3>🔐 Driver Login</h3>
+      <div class="driver-login-grid">
+        <input id="driverLoginId" placeholder="Driver ID e.g. JTT-D-1001">
+        <input id="driverLoginPin" type="password" placeholder="Driver PIN">
+      </div>
+      <button type="button" class="admin-action" id="driverLoginBtn" style="margin-top:10px">Login to Driver Panel</button>
+      <p class="admin-note">Demo/prototype data browser mein save hota hai. Production mein server authentication zaroori hai.</p>
+    </div>
+  </div>
+
+  <div id="driverDashboard" class="driver-dashboard" hidden>
+    <div class="driver-top">
+      <div id="driverProfileMini"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="admin-action" id="driverLocationBtn">📍 Share My Location</button><button type="button" class="secondary-btn" id="driverLogout">Logout</button></div>
+    </div>
+    <div id="driverLocationStatus" class="driver-location">Location: not shared yet. Nearby booking alerts ke liye location allow karein.</div>
+    <div class="driver-stats">
+      <div class="driver-stat"><span>All Assigned</span><b id="driverTotal">0</b></div><div class="driver-stat"><span>Pending</span><b id="driverPending">0</b></div><div class="driver-stat"><span>Confirmed</span><b id="driverConfirmed">0</b></div><div class="driver-stat"><span>Nearby</span><b id="driverNearby">0</b></div>
+    </div>
+    <div class="driver-toolbar"><strong>My Assigned Bookings</strong><div style="display:flex;gap:8px;align-items:center"><label style="font-size:12px;font-weight:800">Alert Radius <select id="driverRadius" class="status-select"><option value="20">20 km</option><option value="25">25 km</option><option value="30" selected>30 km</option></select></label><button type="button" class="secondary-btn" id="driverRefresh">↻ Refresh</button></div></div>
+    <div id="driverBookings" class="driver-bookings"></div>
+  </div>
+</section>
+
+<div class="driver-modal" id="driverNearbyModal" hidden><div class="driver-modal-box"><h3>🚨 Nearby Booking Alert</h3><p id="nearbyAlertText"></p><div id="nearbyAlertDetails" class="track-card"></div><div style="display:flex;gap:10px;margin-top:14px"><button class="confirm-btn" id="acceptNearbyBtn" type="button">Accept / Request</button><button class="secondary-btn" id="closeNearbyBtn" type="button">Close</button></div></div></div>
+
+<section class="admin-section" id="adminSection" hidden>
+  <div class="booking-head">
+    <div><h2 style="margin:0">Admin Panel</h2><p style="margin:6px 0 0;color:#65728a">Manage bookings, status and driver assignment.</p></div>
+    <span class="booking-badge">OPERATIONS</span>
+  </div>
+  <div id="adminLoginBox" class="admin-login">
+    <h3 style="margin-top:0">Admin Login</h3>
+    <input id="adminPin" type="password" inputmode="numeric" maxlength="8" placeholder="Enter admin PIN">
+    <button type="button" class="confirm-btn" id="adminLoginBtn">Open Admin Panel</button>
+    <div class="admin-note">Demo PIN: <strong>1234</strong>. Production version should use a real server-side login.</div>
+  </div>
+  <div id="adminDashboard" hidden>
+    <div class="admin-stats">
+      <div class="admin-stat"><span>Total</span><b id="statTotal">0</b></div>
+      <div class="admin-stat"><span>Pending</span><b id="statPending">0</b></div>
+      <div class="admin-stat"><span>Confirmed</span><b id="statConfirmed">0</b></div>
+      <div class="admin-stat"><span>Completed</span><b id="statCompleted">0</b></div>
+      <div class="admin-stat"><span>Cancelled</span><b id="statCancelled">0</b></div>
+    </div>
+    <div class="admin-toolbar">
+      <strong>Booking Management</strong>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="secondary-btn" id="adminRefresh">↻ Refresh</button>
+        <button type="button" class="secondary-btn" id="exportDataBtn">⬇️ Backup Data</button>
+        <button type="button" class="secondary-btn" id="importDataBtn">⬆️ Restore Data</button>
+        <input type="file" id="importDataFile" accept="application/json" hidden>
+      </div>
+    </div>
+    <div class="admin-note" style="margin:10px 0">🔐 <strong>Admin control:</strong> Drivers aur customer records sirf Admin hi delete kar sakta hai. Backup JSON file ko safe jagah rakhein.</div>
+    <div class="admin-filters">
+      <input id="adminSearch" placeholder="Search Booking ID, name, mobile...">
+      <select id="adminStatusFilter"><option value="ALL">All Status</option><option>Pending</option><option>Confirmed</option><option>Completed</option><option>Cancelled</option></select>
+      <select id="adminDriverFilter"><option value="ALL">All Drivers</option><option value="Unassigned">Unassigned</option></select>
+    </div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Booking</th><th>Customer</th><th>Travel</th><th>Route</th><th>Fare</th><th>Status</th><th>Driver</th><th>Action</th></tr></thead><tbody id="adminTableBody"></tbody></table></div>
+    <div class="admin-tabs"><button class="admin-tab active" type="button" data-admin-tab="drivers">👨‍✈️ Driver Details</button><button class="admin-tab" type="button" data-admin-tab="customers">👤 Customer Details</button></div>
+    <div class="admin-drivers" id="adminDriversPanel"><div class="admin-table-wrap"><table class="mini-table"><thead><tr><th>Photo</th><th>Driver ID</th><th>Driver</th><th>Contact</th><th>Vehicle</th><th>Licence</th><th>Address</th><th>Status</th><th>Admin Action</th></tr></thead><tbody id="adminDriversBody"></tbody></table></div></div>
+    <div class="admin-customers" id="adminCustomersPanel" hidden><div class="admin-table-wrap"><table class="mini-table"><thead><tr><th>Customer</th><th>Contact</th><th>Booking</th><th>Travel</th><th>Route</th><th>Payment/Fare</th><th>Admin Action</th></tr></thead><tbody id="adminCustomersBody"></tbody></table></div></div>
+  </div>
+</section>
+
+<section id="bookingSection" class="booking-section" hidden>
+  <div class="booking-head">
+    <div>
+      <h2>Complete Your Booking</h2>
+      <p style="margin:6px 0 0;color:#65728a">Enter passenger details and choose your payment method.</p>
+    </div>
+    <span class="booking-badge">SECURE BOOKING</span>
+  </div>
+
+  <form id="bookingForm">
+    <div class="booking-grid">
+      <label>Customer Name *
+        <input id="customerName" required placeholder="Enter full name">
+      </label>
+      <label>Mobile Number *
+        <input id="customerMobile" required type="tel" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number">
+      </label>
+      <label>Travel Date *
+        <input id="travelDate" required type="date">
+      </label>
+      <label>Pickup Time *
+        <input id="pickupTime" required type="time">
+      </label>
+      <label>Passengers
+        <select id="passengers">
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
+      </label>
+      <label>Payment Method *
+        <div class="payment-options">
+          <label class="payment-option"><input type="radio" name="paymentMethod" value="UPI" required><span><strong>UPI</strong><small>Pay online</small></span></label>
+          <label class="payment-option"><input type="radio" name="paymentMethod" value="Cash" required><span><strong>Cash</strong><small>Pay to driver</small></span></label>
+        </div>
+      </label>
+      <label class="full">Special Note
+        <textarea id="specialNote" placeholder="Any special requirement (optional)"></textarea>
+      </label>
+    </div>
+
+    <div class="booking-summary">
+      <div class="booking-summary-row"><span>Selected Car</span><strong id="bookingCar">—</strong></div>
+      <div class="booking-summary-row"><span>Trip Type</span><strong id="bookingTrip">—</strong></div>
+      <div class="booking-summary-row"><span>Distance</span><strong id="bookingDistance">—</strong></div>
+      <div class="booking-summary-row total"><span>Estimated Fare</span><strong id="bookingFare">₹0</strong></div>
+    </div>
+
+    <div class="booking-actions">
+      <button class="confirm-btn" type="submit">Confirm Booking</button>
+      <button class="secondary-btn" type="button" id="cancelBooking">Cancel</button>
+    </div>
+  </form>
+
+  <div class="confirmation" id="confirmationBox" hidden aria-live="polite">
+    <h3>Booking Request Received</h3>
+    <p>Your booking ID has been created. Current status: <strong>Pending</strong>. You can track it from My Bookings.</p>
+    <div class="booking-id" id="bookingId">JTT-000000</div>
+    <div class="receipt" id="receiptContent"></div>
+    <div class="booking-actions">
+      <button class="confirm-btn" type="button" id="whatsappBooking">Send on WhatsApp</button>
+      <button class="secondary-btn" type="button" id="printBooking">Print Receipt</button>
+      <button class="secondary-btn" type="button" id="newBooking">New Booking</button>
+    </div>
+  </div>
+</section>
+
+<script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.destination-card').forEach(c=>c.addEventListener('click',e=>{e.preventDefault();const p=c.dataset.place;const drop=document.getElementById('drop');if(drop){drop.value=p;drop.focus();document.getElementById('bookingSection')?.scrollIntoView({behavior:'smooth',block:'start'});}}));});</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const vehicles=[
+{name:"Maruti Swift",rate:12,wait:150,img:"https://images.financialexpressdigital.com/2023/10/2024-maruti-suzuki-swift-2.jpg"},
+{name:"Maruti Dzire",rate:13,wait:150,img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5PvNctWh0_BTglwgPJtSCY6Rk83ngxkt9sVcbUFSRIw&s=10"},
+{name:"Toyota Etios",rate:14,wait:200,img:"https://www.xdrivecars.com/assets/images/car_images/Used-cars-in-trivandrum--2305202421070.webp"},
+{name:"Maruti Ertiga",rate:17,wait:250,img:"https://upload.wikimedia.org/wikipedia/commons/f/f9/Suzuki_Ertiga_NC_FL_1.5_GLX_Hybrid_Snow_White_Pearl.jpg?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original"},
+{name:"Toyota Innova",rate:20,wait:300,img:"https://www.jazzycars.in/wp-content/uploads/2023/07/WhatsApp-Image-2023-07-28-at-4.17.00-PM.jpeg"}
+];
+
+let trip=1,selected=null,pickCoord=null,dropCoord=null,routeLayer=null,markers=[];
+const map=L.map("map").setView([26.9124,75.7873],11);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+
+const $=id=>document.getElementById(id);
+function status(msg,show=true){$("status").style.display=show?"block":"none";$("status").textContent=msg}
+function formatTime(min){
+ // OSRM can return speed-limit based times that are too optimistic for real cab travel.
+ // Show a practical estimate with a 45% city/traffic buffer.
+ min=Math.max(15, Math.round(min*1.45));
+ if(min<60)return min+" min";
+ const h=Math.floor(min/60),m=min%60; return h+" hr"+(m?" "+m+" min":"");
+}
+function renderCars(){
+ $("cars").innerHTML=vehicles.map((v,i)=>`
+ <div class="car ${selected===i?"selected":""}" data-i="${i}">
+  <div class="check">✓</div><img src="${v.img}" alt="${v.name}" loading="lazy">
+  <div class="carbody"><h3>${v.name}</h3><div class="rate">₹${v.rate}/km</div><button type="button" class="book-now" data-book="${i}">Book Now</button></div>
+ </div>`).join("");
+ document.querySelectorAll(".car").forEach(c=>c.addEventListener("click",(e)=>{
+  if(e.target.closest(".book-now")) return;
+  selected=+c.dataset.i; renderCars(); updateSelected();
+}));
+document.querySelectorAll(".book-now").forEach(b=>b.addEventListener("click",(e)=>{
+  e.preventDefault();
+  e.stopPropagation();
+  const card=e.target.closest(".car");
+  if(card){
+    selected=+card.dataset.i;
+    renderCars();
+    updateSelected();
+    openBookingSection();
+  }
+}));
+}
+function updateSelected(){
+ const box=$("selectedBox");
+ if(selected===null){box.classList.remove("show");return}
+ box.classList.add("show");
+ const v=vehicles[selected];
+ const km=parseFloat($("distance").dataset.km||"0");
+ const fare=Math.round(km*v.rate);
+ box.innerHTML=`<b>${v.name}</b> selected &nbsp; • &nbsp; ₹${v.rate}/km
+ ${km?`<br><strong>Estimated Fare: ₹${fare}</strong>`:"<br>Route calculate karne ke baad estimated fare yahan dikhega."}`;
+}
+function setupSuggestions(inputId,sugId,which){
+ const input=$(inputId),box=$(sugId);let timer;
+ input.addEventListener("input",()=>{
+  clearTimeout(timer); const q=input.value.trim();
+  if(q.length<3){box.style.display="none";return}
+  timer=setTimeout(async()=>{
+   try{
+    const r=await fetch("https://photon.komoot.io/api/?limit=5&lang=en&q="+encodeURIComponent(q));
+    if(!r.ok)throw 0; const d=await r.json();
+    box.innerHTML=(d.features||[]).map((f,i)=>{
+      const p=f.properties||{}, name=[p.name,p.city||p.county,p.state].filter(Boolean).join(", ");
+      return `<div class="suggestion" data-i="${i}">${name||q}</div>`;
+    }).join("");
+    box.style.display=d.features?.length?"block":"none";
+    box.querySelectorAll(".suggestion").forEach((el,i)=>el.addEventListener("click",()=>{
+      const f=d.features[i],c=f.geometry.coordinates;
+      input.value=el.textContent; if(which==="pick")pickCoord={lon:+c[0],lat:+c[1]};else dropCoord={lon:+c[0],lat:+c[1]};
+      box.style.display="none";
+    }));
+   }catch(e){box.style.display="none"}
+  },350);
+ });
+ input.addEventListener("change",()=>{if(which==="pick")pickCoord=null;else dropCoord=null});
+}
+setupSuggestions("pickup","pickSug","pick");setupSuggestions("drop","dropSug","drop");
+
+document.querySelectorAll(".trip").forEach(t=>t.addEventListener("click",()=>{document.querySelectorAll(".trip").forEach(x=>x.classList.remove("active"));t.classList.add("active");trip=+t.dataset.trip; if($("distance").dataset.basekm){setResult(+$("distance").dataset.basekm)};}));
+
+async function geocode(q){
+ const r=await fetch("https://photon.komoot.io/api/?limit=1&lang=en&q="+encodeURIComponent(q));
+ if(!r.ok)throw Error("Location search service unavailable");
+ const d=await r.json();if(!d.features?.length)throw Error("Location nahi mili: "+q);
+ const c=d.features[0].geometry.coordinates;return {lon:+c[0],lat:+c[1]};
+}
+async function route(a,b){
+ const u=`https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson`;
+ const r=await fetch(u);if(!r.ok)throw Error("Route service unavailable");
+ const d=await r.json();if(d.code!=="Ok"||!d.routes?.length)throw Error("Driving route nahi mili");
+ return d.routes[0];
+}
+function setResult(baseKm){
+ const km=baseKm*trip;
+ $("distance").textContent=km.toFixed(1)+" km";$("distance").dataset.km=km;$("distance").dataset.basekm=baseKm;
+ $("duration").textContent=formatTime((window.baseMinutes||0)*trip);
+ updateSelected();
+}
+$("calc").addEventListener("click",async()=>{
+ try{
+  $("calc").disabled=true;$("calc").textContent="⏳ Calculating...";
+  const p=$("pickup").value.trim(),d=$("drop").value.trim();if(!p||!d)throw Error("Pickup aur Drop dono bharo.");
+  status("Location aur route calculate ho raha hai...");
+  if(!pickCoord)pickCoord=await geocode(p); if(!dropCoord)dropCoord=await geocode(d);
+  const rt=await route(pickCoord,dropCoord);window.baseMinutes=rt.duration/60;
+  markers.forEach(m=>m.remove());markers=[];
+  markers.push(L.marker([pickCoord.lat,pickCoord.lon]).addTo(map).bindPopup("Pickup"));
+  markers.push(L.marker([dropCoord.lat,dropCoord.lon]).addTo(map).bindPopup("Drop"));
+  if(routeLayer)routeLayer.remove();routeLayer=L.geoJSON(rt.geometry).addTo(map);map.fitBounds(routeLayer.getBounds(),{padding:[25,25]});
+  setResult(rt.distance/1000);status("Route calculated successfully ✓");
+ }catch(e){status(e.message||"Route calculate nahi hua.");}
+ finally{$("calc").disabled=false;$("calc").textContent="📍 Calculate Route & Fare";}
+});
+$("clear").addEventListener("click",()=>{ $("pickup").value="";$("drop").value="";pickCoord=null;dropCoord=null;$("distance").textContent="—";$("duration").textContent="—";$("distance").dataset.km="";$("distance").dataset.basekm="";selected=null;updateSelected();status("",false);markers.forEach(m=>m.remove());markers=[];if(routeLayer){routeLayer.remove();routeLayer=null}map.setView([26.9124,75.7873],11);});
+renderCars();
+</script>
+
+<script>
+(function(){
+  const bookingSection=document.getElementById('bookingSection'), bookingForm=document.getElementById('bookingForm');
+  if(!bookingSection||!bookingForm)return;
+  let latestBooking=null;
+  const $=id=>document.getElementById(id);
+  function htmlEscape(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function getBookingData(){const selected=document.querySelector('.car.selected');const carName=selected?.querySelector('h3')?.textContent?.trim()||'Selected Car';const rate=selected?Number(vehicles[Number(selected.dataset.i)]?.rate||0):0;const distanceText=$('distance')?.textContent||'—';const km=Number($('distance')?.dataset?.km||0);const fareText=km&&rate?'₹'+Math.round(km*rate).toLocaleString('en-IN'):'₹0';return{carName,rate,distanceText,fareText};}
+  window.openBookingSection=function(){if(!Number($('distance')?.dataset?.km||0)){alert('Pehle Pickup aur Drop select karke Calculate Route & Fare karein.');return;}if(selected===null){alert('Pehle car select karein.');return;}const data=getBookingData();$('bookingCar').textContent=data.carName;$('bookingTrip').textContent=document.querySelector('.trip[data-trip="2"].active')?'Round Trip':'One Way';$('bookingDistance').textContent=data.distanceText;$('bookingFare').textContent=data.fareText;bookingSection.hidden=false;bookingSection.scrollIntoView({behavior:'smooth',block:'start'});};
+  bookingForm.addEventListener('submit',function(e){e.preventDefault();const payment=document.querySelector('input[name="paymentMethod"]:checked')?.value||'';const now=new Date();const bookingId='JTT-'+now.getFullYear().toString().slice(-2)+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'-'+Math.floor(1000+Math.random()*9000);const data=getBookingData();latestBooking={id:bookingId,status:'Pending',name:$('customerName').value.trim(),mobile:$('customerMobile').value.trim(),date:$('travelDate').value,time:$('pickupTime').value,passengers:$('passengers').value,payment,note:$('specialNote').value.trim(),car:data.carName,trip:document.querySelector('.trip[data-trip="2"].active')?'Round Trip':'One Way',distance:data.distanceText,fare:data.fareText,pickup:$('pickup').value.trim(),drop:$('drop').value.trim(),pickupLat:pickCoord?.lat||null,pickupLng:pickCoord?.lon||null,dropLat:dropCoord?.lat||null,dropLng:dropCoord?.lon||null,driver:'Unassigned',driverId:'',createdAt:now.toISOString()};const saved=JSON.parse(localStorage.getItem('jtt_bookings')||'[]');saved.unshift(latestBooking);localStorage.setItem('jtt_bookings',JSON.stringify(saved)); const customers=JSON.parse(localStorage.getItem('jtt_customers')||'[]'); const existingCustomer=customers.find(c=>c.mobile===latestBooking.mobile); if(existingCustomer){existingCustomer.name=latestBooking.name;existingCustomer.updatedAt=now.toISOString();existingCustomer.lastBookingId=bookingId;}else{customers.unshift({id:'JTT-C-'+Date.now().toString(36).toUpperCase(),name:latestBooking.name,mobile:latestBooking.mobile,createdAt:now.toISOString(),lastBookingId:bookingId});} localStorage.setItem('jtt_customers',JSON.stringify(customers)); $('bookingId').textContent=bookingId;$('receiptContent').innerHTML='<div class="booking-summary-row"><span>Customer</span><strong>'+htmlEscape(latestBooking.name)+'</strong></div><div class="booking-summary-row"><span>Mobile</span><strong>'+htmlEscape(latestBooking.mobile)+'</strong></div><div class="booking-summary-row"><span>Car</span><strong>'+htmlEscape(latestBooking.car)+'</strong></div><div class="booking-summary-row"><span>Travel</span><strong>'+htmlEscape(latestBooking.date)+' '+htmlEscape(latestBooking.time)+'</strong></div><div class="booking-summary-row"><span>Payment</span><strong>'+htmlEscape(latestBooking.payment)+'</strong></div><div class="booking-summary-row"><span>Fare</span><strong>'+htmlEscape(latestBooking.fare)+'</strong></div>'+(latestBooking.payment==='UPI'?'<p style="margin:12px 0 0"><strong>UPI:</strong> Payment instructions will be shared by the travel operator.</p>':'<p style="margin:12px 0 0"><strong>Cash:</strong> Pay the driver as instructed by the travel operator.</p>');bookingForm.hidden=true;$('confirmationBox').hidden=false;$('confirmationBox').scrollIntoView({behavior:'smooth',block:'start'});});
+  $('cancelBooking').addEventListener('click',()=>bookingSection.hidden=true);
+  $('newBooking').addEventListener('click',()=>{latestBooking=null;bookingForm.reset();bookingForm.hidden=false;$('confirmationBox').hidden=true;});
+  $('whatsappBooking').addEventListener('click',()=>{if(!latestBooking)return;const message=['*Jakhar Tour Travels - Booking Request*','Booking ID: '+latestBooking.id,'Name: '+latestBooking.name,'Mobile: '+latestBooking.mobile,'Car: '+latestBooking.car,'Trip: '+latestBooking.trip,'Pickup: '+latestBooking.pickup,'Drop: '+latestBooking.drop,'Date: '+latestBooking.date,'Time: '+latestBooking.time,'Passengers: '+latestBooking.passengers,'Distance: '+latestBooking.distance,'Fare: '+latestBooking.fare,'Payment: '+latestBooking.payment,'Note: '+latestBooking.note].join('\n');window.open('https://wa.me/?text='+encodeURIComponent(message),'_blank');});
+  $('printBooking').addEventListener('click',()=>{if(!latestBooking)return;const receipt=$('receiptContent').innerHTML,id=latestBooking.id||'',win=window.open('','_blank');if(!win)return;win.document.write('<html><head><title>Jakhar Tour Travels - '+htmlEscape(id)+'</title><style>body{font-family:Arial;padding:30px;color:#172033}h1{color:#1463ff}.booking-summary-row{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #ddd}</style></head><body><h1>Jakhar Tour Travels</h1><h2>Booking - '+htmlEscape(id)+'</h2>'+receipt+'</body></html>');win.document.close();setTimeout(()=>win.print(),250);});
+})();
+</script>
+<script>
+(function(){
+  const btn=document.getElementById('myBookingsBtn');
+  const section=document.getElementById('trackingSection');
+  const track=document.getElementById('trackBtn');
+  const input=document.getElementById('trackBookingId');
+  const result=document.getElementById('trackingResult');
+  if(!btn||!section||!track) return;
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function showBooking(b){
+    const st=String(b.status||'Pending');
+    result.innerHTML='<div class="track-card">'+
+      '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong style="font-size:18px">'+esc(b.id)+'</strong><span class="status-pill '+st.toLowerCase()+'">'+esc(st)+'</span></div>'+
+      '<div class="booking-summary-row"><span>Customer</span><strong>'+esc(b.name)+'</strong></div>'+
+      '<div class="booking-summary-row"><span>Car</span><strong>'+esc(b.car)+'</strong></div>'+ 
+      '<div class="booking-summary-row"><span>Pickup</span><strong>'+esc(b.pickup)+'</strong></div>'+ 
+      '<div class="booking-summary-row"><span>Drop</span><strong>'+esc(b.drop)+'</strong></div>'+ 
+      '<div class="booking-summary-row"><span>Travel</span><strong>'+esc(b.date)+' '+esc(b.time)+'</strong></div>'+ 
+      '<div class="booking-summary-row"><span>Payment</span><strong>'+esc(b.payment)+'</strong></div>'+ 
+      '<div class="booking-summary-row"><span>Driver</span><strong>'+esc(b.driver||'Not assigned yet')+'</strong></div>'+ 
+      '<div class="booking-summary-row total"><span>Fare</span><strong>'+esc(b.fare)+'</strong></div>'+ 
+      '</div>';
+  }
+  btn.addEventListener('click',()=>{section.hidden=false;section.scrollIntoView({behavior:'smooth',block:'start'});input.focus();});
+  track.addEventListener('click',()=>{
+    const id=input.value.trim().toUpperCase();
+    const bookings=JSON.parse(localStorage.getItem('jtt_bookings')||'[]');
+    const b=bookings.find(x=>String(x.id).toUpperCase()===id);
+    result.innerHTML=b ? '' : '<div class="empty-bookings">Booking ID nahi mila. ID dobara check karein.</div>';
+    if(b) showBooking(b);
+  });
+})();
+</script>
+<script>
+(function(){
+  const adminSection=document.getElementById('adminSection'), adminBtn=document.getElementById('adminBtn');
+  const loginBox=document.getElementById('adminLoginBox'), dashboard=document.getElementById('adminDashboard');
+  const pin=document.getElementById('adminPin'), loginBtn=document.getElementById('adminLoginBtn'), body=document.getElementById('adminTableBody');
+  if(!adminSection||!adminBtn)return;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const getBookings=()=>JSON.parse(localStorage.getItem('jtt_bookings')||'[]');
+  const saveBookings=b=>localStorage.setItem('jtt_bookings',JSON.stringify(b));
+  const getDrivers=()=>JSON.parse(localStorage.getItem('jtt_drivers')||'[]');
+  function ensureFields(list){return list.map(b=>({...b,status:b.status||'Pending',driver:b.driver||'Unassigned',driverId:b.driverId||''}));}
+  function render(){
+    const all=ensureFields(getBookings()); const drivers=getDrivers();
+    let q=(document.getElementById('adminSearch').value||'').trim().toLowerCase(), sf=document.getElementById('adminStatusFilter').value, df=document.getElementById('adminDriverFilter').value;
+    const counts={Total:all.length,Pending:0,Confirmed:0,Completed:0,Cancelled:0}; all.forEach(b=>{if(counts[b.status]!==undefined)counts[b.status]++});
+    Object.keys(counts).forEach(k=>document.getElementById('stat'+k).textContent=counts[k]);
+    document.getElementById('adminDriverFilter').innerHTML='<option value="ALL">All Drivers</option><option value="Unassigned">Unassigned</option>'+drivers.map(d=>'<option value="'+esc(d.id)+'">'+esc(d.id+' • '+d.name)+'</option>').join('');
+    document.getElementById('adminDriverFilter').value=drivers.some(d=>d.id===df)?df:(df==='Unassigned'?'Unassigned':'ALL');
+    const filtered=all.filter(b=>{const hay=[b.id,b.name,b.mobile,b.car,b.pickup,b.drop].join(' ').toLowerCase();return(!q||hay.includes(q))&&(sf==='ALL'||b.status===sf)&&(df==='ALL'||(df==='Unassigned'?(b.driverId||'')==='' : b.driverId===df));});
+    if(!filtered.length)body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#718096">No bookings found.</td></tr>';
+    else body.innerHTML=filtered.map(b=>`<tr><td><strong>${esc(b.id)}</strong><br><small>${esc(b.payment||'')}</small></td><td><strong>${esc(b.name)}</strong><br>${esc(b.mobile)}<br><small>${esc(b.passengers||'')} passenger(s)</small></td><td>${esc(b.date)}<br>${esc(b.time)}<br><small>${esc(b.trip)}</small></td><td><small><b>From:</b> ${esc(b.pickup)}<br><b>To:</b> ${esc(b.drop)}</small></td><td><strong>${esc(b.fare)}</strong><br><small>${esc(b.distance)}</small></td><td><select class="status-select" data-id="${esc(b.id)}">${['Pending','Confirmed','Completed','Cancelled'].map(x=>`<option ${b.status===x?'selected':''}>${x}</option>`).join('')}</select></td><td><select class="driver-select" data-id="${esc(b.id)}"><option value="">Unassigned</option>${drivers.map(d=>`<option value="${esc(d.id)}" ${b.driverId===d.id?'selected':''}>${esc(d.id+' • '+d.name)}</option>`).join('')}</select></td><td><button class="admin-action" data-save="${esc(b.id)}">Save</button></td></tr>`).join('');
+    body.querySelectorAll('[data-save]').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.save,row=btn.closest('tr');const status=row.querySelector('.status-select').value,driverId=row.querySelector('.driver-select').value;const d=drivers.find(x=>x.id===driverId);saveBookings(ensureFields(getBookings()).map(x=>x.id===id?{...x,status,driverId,driver:d?.id||'',driverName:d?.name||''}:x));render();}));
+    renderDrivers(drivers); renderCustomers(all);
+  }
+  function renderDrivers(drivers){const el=document.getElementById('adminDriversBody'); if(!drivers.length){el.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px">No drivers registered yet.</td></tr>';return;} el.innerHTML=drivers.map(d=>`<tr><td><img class="photo-thumb" src="${esc(d.photo)}" alt="Driver"></td><td><strong>${esc(d.id)}</strong></td><td><strong>${esc(d.name)}</strong><br><small>${esc(d.email||'')}</small></td><td>${esc(d.mobile)}</td><td>${esc(d.vehicleType)}<br><small>${esc(d.vehicleNo)}</small></td><td>${esc(d.license)}</td><td>${esc(d.address)}</td><td><span class="status-pill confirmed">${esc(d.status||'Active')}</span></td><td><button type="button" class="danger-btn" data-delete-driver="${esc(d.id)}">Delete</button></td></tr>`).join(''); el.querySelectorAll('[data-delete-driver]').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.deleteDriver;if(!confirm('Admin: Is driver ko permanently delete karna hai?'))return;const ds=getDrivers().filter(d=>d.id!==id);localStorage.setItem('jtt_drivers',JSON.stringify(ds));const bs=getBookings().map(b=>b.driverId===id?{...b,driverId:'',driver:'Unassigned',driverName:''}:b);saveBookings(bs);render();}));}
+  function renderCustomers(all){const el=document.getElementById('adminCustomersBody');if(!all.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px">No customers yet.</td></tr>';return;}el.innerHTML=all.map(b=>`<tr><td><strong>${esc(b.name)}</strong><br><small>${esc(b.passengers||'')} passenger(s)</small></td><td>${esc(b.mobile)}</td><td><strong>${esc(b.id)}</strong><br>${esc(b.status)}</td><td>${esc(b.date)} ${esc(b.time)}</td><td><small>${esc(b.pickup)} → ${esc(b.drop)}</small></td><td>${esc(b.payment)}<br><strong>${esc(b.fare)}</strong></td><td><button type="button" class="danger-btn" data-delete-customer="${esc(b.id)}">Delete Record</button></td></tr>`).join(''); el.querySelectorAll('[data-delete-customer]').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.deleteCustomer;if(!confirm('Admin: Is customer booking/record ko permanently delete karna hai?'))return;saveBookings(getBookings().filter(b=>b.id!==id));render();}));}
+  adminBtn.addEventListener('click',()=>{adminSection.hidden=false;adminSection.scrollIntoView({behavior:'smooth',block:'start'});});
+  loginBtn.addEventListener('click',()=>{if(pin.value==='1234'){loginBox.hidden=true;dashboard.hidden=false;render();}else alert('Invalid admin PIN.');});
+  pin.addEventListener('keydown',e=>{if(e.key==='Enter')loginBtn.click()});
+  ['adminSearch','adminStatusFilter','adminDriverFilter'].forEach(id=>document.getElementById(id).addEventListener('input',render));
+  document.getElementById('adminRefresh').addEventListener('click',render);
+  document.querySelectorAll('.admin-tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.admin-tab').forEach(x=>x.classList.remove('active'));tab.classList.add('active');const drivers=tab.dataset.adminTab==='drivers';document.getElementById('adminDriversPanel').hidden=!drivers;document.getElementById('adminCustomersPanel').hidden=drivers;}));
+  document.getElementById('exportDataBtn').addEventListener('click',()=>{const payload={version:2,exportedAt:new Date().toISOString(),bookings:getBookings(),drivers:getDrivers(),customers:JSON.parse(localStorage.getItem('jtt_customers')||'[]')};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='jakhar-tour-travels-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);});
+  document.getElementById('importDataBtn').addEventListener('click',()=>document.getElementById('importDataFile').click());
+  document.getElementById('importDataFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const p=JSON.parse(r.result);if(!Array.isArray(p.bookings)||!Array.isArray(p.drivers))throw new Error('Invalid backup');if(!confirm('Current data replace karke backup restore karna hai?'))return;saveBookings(p.bookings);localStorage.setItem('jtt_drivers',JSON.stringify(p.drivers));localStorage.setItem('jtt_customers',JSON.stringify(Array.isArray(p.customers)?p.customers:[]));render();alert('Backup restored successfully.');}catch(err){alert('Invalid backup file.');}};r.readAsText(file);e.target.value='';});
+  window.refreshAdminPanel=render;
+})();
+</script>
+<script>
+(function(){
+ const section=document.getElementById('driverSection'),btn=document.getElementById('driverBtn'); if(!section||!btn)return;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const getDrivers=()=>JSON.parse(localStorage.getItem('jtt_drivers')||'[]'); const saveDrivers=x=>localStorage.setItem('jtt_drivers',JSON.stringify(x));
+ const getBookings=()=>JSON.parse(localStorage.getItem('jtt_bookings')||'[]'); const saveBookings=x=>localStorage.setItem('jtt_bookings',JSON.stringify(x));
+ let currentDriver=null,driverPos=null,alerted=new Set();
+ const radiusEl=document.getElementById('driverRadius');
+ btn.addEventListener('click',()=>{section.hidden=false;section.scrollIntoView({behavior:'smooth',block:'start'});});
+ const photo=document.getElementById('driverPhoto'),preview=document.getElementById('driverPhotoPreview');
+ photo.addEventListener('change',()=>{const f=photo.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{preview.src=r.result;preview.style.display='block'};r.readAsDataURL(f);});
+ document.getElementById('driverRegisterForm').addEventListener('submit',e=>{e.preventDefault();const file=photo.files?.[0];if(!file){alert('Profile photo compulsory hai.');return;}const r=new FileReader();r.onload=()=>{const ds=getDrivers();let n=1001;const nums=ds.map(d=>parseInt(String(d.id).split('-').pop(),10)).filter(Number.isFinite);if(nums.length)n=Math.max(...nums)+1;const d={id:'JTT-D-'+n,name:document.getElementById('driverName').value.trim(),mobile:document.getElementById('driverMobile').value.trim(),email:document.getElementById('driverEmail').value.trim(),vehicleNo:document.getElementById('driverVehicleNo').value.trim().toUpperCase(),vehicleType:document.getElementById('driverVehicleType').value,license:document.getElementById('driverLicense').value.trim().toUpperCase(),address:document.getElementById('driverAddress').value.trim(),photo:r.result,pin:document.getElementById('driverPin').value,status:'Active',createdAt:new Date().toISOString()};ds.push(d);saveDrivers(ds);document.getElementById('driverRegisterResult').innerHTML='<div class="confirmation" style="margin-top:0"><strong>Driver ID Created:</strong><div class="booking-id">'+esc(d.id)+'</div><p style="margin:0">Is Driver ID aur PIN se login karein.</p></div>';e.target.reset();preview.style.display='none';};r.readAsDataURL(file);});
+ document.getElementById('driverLoginBtn').addEventListener('click',()=>{const id=document.getElementById('driverLoginId').value.trim().toUpperCase(),pin=document.getElementById('driverLoginPin').value;const d=getDrivers().find(x=>x.id.toUpperCase()===id&&x.pin===pin);if(!d){alert('Driver ID ya PIN galat hai.');return;}currentDriver=d;document.getElementById('driverAuth').hidden=true;document.getElementById('driverDashboard').hidden=false;render();});
+ document.getElementById('driverLogout').addEventListener('click',()=>{currentDriver=null;driverPos=null;document.getElementById('driverAuth').hidden=false;document.getElementById('driverDashboard').hidden=true;});
+ function haversine(a,b){const R=6371,lat1=a.lat*Math.PI/180,lat2=b.lat*Math.PI/180,dlat=(b.lat-a.lat)*Math.PI/180,dlon=(b.lng-a.lng)*Math.PI/180;const x=Math.sin(dlat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
+ function nearbyBookings(all){if(!driverPos)return [];const r=Number(radiusEl.value);return all.map(b=>({...b,_km:(b.pickupLat!=null&&b.pickupLng!=null)?haversine(driverPos,{lat:Number(b.pickupLat),lng:Number(b.pickupLng)}):Infinity})).filter(b=>b._km<=r&&b.status!=='Cancelled'&&b.status!=='Completed').sort((a,b)=>a._km-b._km);}
+ function render(){if(!currentDriver)return;document.getElementById('driverProfileMini').innerHTML='<div class="profile-mini"><img src="'+esc(currentDriver.photo)+'" alt="Driver"><div><strong>'+esc(currentDriver.name)+'</strong><br><small>'+esc(currentDriver.id)+' • '+esc(currentDriver.vehicleType)+' • '+esc(currentDriver.vehicleNo)+'</small></div></div>';const all=getBookings();const assigned=all.filter(b=>(b.driverId===currentDriver.id)||(b.driver===currentDriver.id)||(b.driverName===currentDriver.name));const nearby=nearbyBookings(all.filter(b=>!b.driverId||b.driverId===currentDriver.id));document.getElementById('driverTotal').textContent=assigned.length;document.getElementById('driverPending').textContent=assigned.filter(b=>b.status==='Pending').length;document.getElementById('driverConfirmed').textContent=assigned.filter(b=>b.status==='Confirmed').length;document.getElementById('driverNearby').textContent=nearby.length;const wrap=document.getElementById('driverBookings');if(!all.length){wrap.innerHTML='<div class="empty-bookings" style="grid-column:1/-1">Abhi koi booking available nahi hai.</div>';return;}wrap.innerHTML=all.map(b=>{const canAlert=!b.driverId||b.driverId===currentDriver.id;const nb=canAlert?nearbyBookings([b])[0]:null;const km=nb?nb._km:Infinity;return '<div class="driver-booking '+(km<=Number(radiusEl.value)?'nearby':'')+'">'+(km<=Number(radiusEl.value)?'<span class="near-badge">📍 '+km.toFixed(1)+' km away</span><br>':'')+'<div style="display:flex;justify-content:space-between;gap:10px;margin:7px 0"><strong>'+esc(b.id)+'</strong><span class="status-pill '+String(b.status||'Pending').toLowerCase()+'">'+esc(b.status)+'</span></div><p style="margin:7px 0"><strong>Customer:</strong> '+esc(b.name)+' • '+esc(b.mobile)+'</p><p style="margin:7px 0"><strong>Travel:</strong> '+esc(b.date)+' '+esc(b.time)+' • '+esc(b.passengers)+' pax</p><p style="margin:7px 0"><strong>From:</strong> '+esc(b.pickup)+'<br><strong>To:</strong> '+esc(b.drop)+'</p><p style="margin:7px 0"><strong>Car:</strong> '+esc(b.car)+' • <strong>Fare:</strong> '+esc(b.fare)+'</p><p style="margin:7px 0"><strong>Payment:</strong> '+esc(b.payment)+'</p>'+(b.note?'<p style="margin:7px 0;color:#65728a"><strong>Note:</strong> '+esc(b.note)+'</p>':'')+'</div>';}).join('');
+  if(driverPos) checkAlerts(nearby);
+ }
+ function checkAlerts(nearby){const fresh=nearby.find(b=>!alerted.has(b.id));if(!fresh)return;alerted.add(fresh.id);document.getElementById('nearbyAlertText').innerHTML='<strong>'+esc(fresh.id)+'</strong> is '+fresh._km.toFixed(1)+' km from your current location.';document.getElementById('nearbyAlertDetails').innerHTML='<b>'+esc(fresh.name)+'</b><br>'+esc(fresh.pickup)+' → '+esc(fresh.drop)+'<br>'+esc(fresh.date)+' '+esc(fresh.time)+'<br>'+esc(fresh.car)+' • '+esc(fresh.fare);document.getElementById('driverNearbyModal').hidden=false;document.getElementById('acceptNearbyBtn').onclick=()=>{const all=getBookings().map(b=>b.id===fresh.id?{...b,driverId:currentDriver.id,driver:currentDriver.id,driverName:currentDriver.name,status:b.status==='Pending'?'Confirmed':b.status}:b);saveBookings(all);document.getElementById('driverNearbyModal').hidden=true;render();};}
+ document.getElementById('closeNearbyBtn').addEventListener('click',()=>document.getElementById('driverNearbyModal').hidden=true);
+ document.getElementById('driverRefresh').addEventListener('click',render);radiusEl.addEventListener('change',()=>{alerted.clear();render();});
+ document.getElementById('driverLocationBtn').addEventListener('click',()=>{if(!navigator.geolocation){alert('Browser geolocation supported nahi hai.');return;}navigator.geolocation.getCurrentPosition(pos=>{driverPos={lat:pos.coords.latitude,lng:pos.coords.longitude};document.getElementById('driverLocationStatus').textContent='📍 Location active • Nearby alerts within '+radiusEl.value+' km';render();},()=>alert('Location permission allow karein, tab nearby booking alert kaam karega.'),{enableHighAccuracy:true,timeout:10000,maximumAge:30000});});
+ window.setInterval(()=>{if(currentDriver&&driverPos)render();},15000);
+})();
+</script>
+</body>
+</html>
