@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Live Portal</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f4f7f6; padding: 20px; }
+.panel { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+th { background: #071a35; color: #fff; }
+select, button { padding: 8px; border-radius: 5px; }
+.save-btn { background: #27ae60; color: #fff; border:none; cursor:pointer;}
+.cancel-btn { background: #e74c3c; color: #fff; border:none; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="panel">
+    <h2><i class="fa-solid fa-user-tie"></i> Live Admin Portal</h2>
+    <div id="adminTableContainer">
+        <table>
+            <thead><tr><th>ID</th><th>Customer</th><th>Route / Date</th><th>Fare</th><th>Status</th><th>Driver</th><th>Actions</th></tr></thead>
+            <tbody id="adminTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBHqSJW6RJkKDrUtPfRmgqQMYei58wBSks",
+    authDomain: "jakhar-tour-travels.firebaseapp.com",
+    projectId: "jakhar-tour-travels",
+    storageBucket: "jakhar-tour-travels.firebasestorage.app",
+    messagingSenderId: "295813687761",
+    appId: "1:295813687761:web:ff425781db24587a8298f0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let driversList = [];
+
+  // Listen to Drivers LIVE
+  onSnapshot(collection(db, "drivers"), (snapshot) => {
+      driversList = [];
+      snapshot.forEach((doc) => { driversList.push(doc.data()); });
+  });
+
+  // Listen to Bookings LIVE
+  onSnapshot(collection(db, "bookings"), (snapshot) => {
+      let html = '';
+      snapshot.forEach((d) => {
+          let b = d.data();
+          let drvOptions = `<option value="">-- Assign Driver --</option>` + driversList.map(drv => `<option value="${drv.id}" ${b.driverId===drv.id?'selected':''}>${drv.name}</option>`).join('');
+          let statOptions = ['Pending','Confirmed','Completed','Cancelled'].map(s => `<option ${b.status===s?'selected':''}>${s}</option>`).join('');
+          
+          html += `<tr>
+              <td><b>${b.id}</b></td>
+              <td>${b.name}<br>${b.phone}</td>
+              <td>${b.route}<br><small>${b.date} ${b.time}</small></td>
+              <td>${b.fare}</td>
+              <td><select id="s_${b.id}">${statOptions}</select></td>
+              <td><select id="d_${b.id}">${drvOptions}</select></td>
+              <td>
+                  <button class="save-btn" onclick="window.saveBooking('${b.id}')">Save</button>
+                  <button class="cancel-btn" onclick="window.cancelBooking('${b.id}')">Cancel</button>
+              </td>
+          </tr>`;
+      });
+      document.getElementById('adminTable').innerHTML = html;
+  });
+
+  window.saveBooking = async function(id) {
+      const status = document.getElementById('s_'+id).value;
+      const driverId = document.getElementById('d_'+id).value;
+      let driverName = '';
+      if(driverId) {
+          const drv = driversList.find(d => d.id === driverId);
+          driverName = drv ? drv.name : '';
+      }
+      
+      await updateDoc(doc(db, "bookings", id), { status, driverId, driverName });
+      alert("Updated Successfully on Live Database!");
+  }
+
+  window.cancelBooking = async function(id) {
+      if(confirm("Cancel this booking?")) {
+          await updateDoc(doc(db, "bookings", id), { status: 'Cancelled', driverId: '', driverName: '' });
+      }
+  }
+</script>
+</body>
+</html>
