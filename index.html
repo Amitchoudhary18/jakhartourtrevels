@@ -132,23 +132,40 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
   .hero-dots { bottom: 70px; }
 }
 
-/* MOBILE HAMBURGER MENU */
+/* ===== MOBILE DRAWER — isolated from desktop navigation ===== */
+.mobile-drawer{display:none}
+@media(max-width:900px){
+  .mobile-drawer{display:block!important;position:fixed;top:0;right:0;width:min(310px,86vw);height:100dvh;background:linear-gradient(180deg,#071a35,#0b4f91);z-index:99999;padding:18px 16px 28px;box-shadow:-14px 0 40px rgba(0,0,0,.4);transform:translateX(105%);transition:transform .25s ease;visibility:hidden;pointer-events:none;overflow-y:auto}
+  .mobile-drawer.open{transform:translateX(0);visibility:visible;pointer-events:auto}
+  .mobile-drawer-head{display:flex;align-items:center;justify-content:space-between;color:#fff;font-size:19px;padding:4px 2px 18px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.15)}
+  .mobile-drawer-head button{width:44px!important;height:44px!important;margin:0!important;padding:0!important;border:0!important;background:rgba(255,255,255,.12)!important;color:#fff!important;border-radius:12px!important;font-size:22px!important;cursor:pointer!important}
+  .mobile-drawer>button,.mobile-drawer>a{display:flex!important;align-items:center;width:100%!important;min-height:52px!important;margin:6px 0!important;padding:14px 15px!important;border:0!important;border-radius:12px!important;background:rgba(255,255,255,.08)!important;color:#fff!important;text-decoration:none!important;font-size:15px!important;font-weight:600!important;text-align:left!important;cursor:pointer!important;touch-action:manipulation!important;box-sizing:border-box!important}
+  .mobile-drawer>button:active,.mobile-drawer>a:active{transform:scale(.98);background:rgba(245,184,46,.25)!important}
+  .mobile-drawer-divider{height:1px;background:rgba(255,255,255,.15);margin:14px 0}
+}
+
+/* MOBILE HAMBURGER MENU — robust touch layout */
 .mobile-menu-btn{display:none}
 .mobile-menu-overlay{display:none}
 @media(max-width:900px){
-  nav{height:64px;padding:9px 14px;flex-wrap:nowrap;gap:8px}
-  .logo{font-size:18px;line-height:1}.logo span{font-size:8px}
-  .mobile-menu-btn{display:grid;place-items:center;margin-left:auto;width:44px;height:44px;border:0;border-radius:12px;background:rgba(245,184,46,.14);color:#f5b82e;font-size:24px;cursor:pointer;z-index:10002}
-  .nav-links{position:fixed;top:0;right:-290px;width:285px;height:100vh;background:linear-gradient(180deg,#071a35,#0b4f91);display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:82px 18px 24px;box-shadow:-12px 0 35px rgba(0,0,0,.3);transition:right .28s ease;z-index:10001;overflow-y:auto}
-  .nav-links.open{right:0}
-  .nav-links button,.nav-links a{font-size:15px;padding:14px 15px;text-align:left;border-radius:12px}
-  .portal-links{display:flex;flex-direction:column;gap:8px;margin:6px 0 0;padding:14px 0 0;border-left:0;border-top:1px solid rgba(255,255,255,.15)}
-  .portal-links a{font-size:14px;padding:13px 15px}
-  .mobile-menu-overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:10000}
-  .page-view{padding-top:64px}
+  body.mobile-menu-open{overflow:hidden}
+  nav{height:64px!important;padding:8px 12px!important;gap:8px!important;z-index:20000!important;flex-wrap:nowrap!important}
+  .logo{font-size:17px!important;gap:6px!important;line-height:1!important;white-space:nowrap}
+  .logo span{font-size:7px!important;letter-spacing:.8px!important}
+  .mobile-menu-btn{display:grid!important;place-items:center!important;margin-left:auto!important;flex:0 0 44px!important;width:44px!important;height:44px!important;border:0!important;border-radius:12px!important;background:rgba(245,184,46,.16)!important;color:#f5b82e!important;font-size:24px!important;cursor:pointer!important;z-index:20003!important;touch-action:manipulation!important}
+  .nav-links{position:fixed!important;top:0!important;right:-310px!important;width:min(300px,82vw)!important;height:100dvh!important;background:linear-gradient(180deg,#071a35 0%,#0b4f91 100%)!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;padding:82px 16px 28px!important;margin:0!important;box-shadow:-14px 0 40px rgba(0,0,0,.38)!important;transition:right .28s ease!important;z-index:20002!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;visibility:hidden!important;pointer-events:none!important}
+  .nav-links.open{right:0!important;visibility:visible!important;pointer-events:auto!important}
+  .nav-links button,.nav-links a{font-size:15px!important;padding:14px 15px!important;text-align:left!important;border-radius:12px!important;min-height:48px!important;display:flex!important;align-items:center!important;width:100%!important;touch-action:manipulation!important}
+  .portal-links{display:flex!important;flex-direction:column!important;gap:8px!important;margin:6px 0 0!important;padding:14px 0 0!important;border-left:0!important;border-top:1px solid rgba(255,255,255,.15)!important}
+  .portal-links a{font-size:14px!important;padding:13px 15px!important}
+  .mobile-menu-overlay.show{display:block!important;position:fixed!important;inset:0!important;background:rgba(0,0,0,.52)!important;z-index:20001!important;touch-action:manipulation!important}
+  .page-view{padding-top:64px!important}
 }
-@media(max-width:520px){.page-view{padding-top:64px}.video-hero{height:calc(100vh - 64px);min-height:520px}.hero-content h1{font-size:31px}}
-
+@media(max-width:520px){
+  .page-view{padding-top:64px!important}
+  .video-hero{height:calc(100dvh - 64px)!important;min-height:520px!important}
+  .hero-content h1{font-size:31px!important}
+}
 </style>
 
 <!-- Firebase Compat Libraries (Simple & Works Everywhere) -->
@@ -175,6 +192,15 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
 <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
 </nav>
 <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+<aside class="mobile-drawer" id="mobileDrawer" aria-hidden="true">
+  <div class="mobile-drawer-head"><strong>Jakhar Travels</strong><button type="button" id="mobileDrawerClose" aria-label="Close menu">✕</button></div>
+  <button type="button" data-mobile-view="home">🏠 Home</button>
+  <button type="button" data-mobile-view="book">🚕 Book Taxi</button>
+  <button type="button" data-mobile-view="mybooking">📋 My Bookings</button>
+  <div class="mobile-drawer-divider"></div>
+  <a href="driver.html">🚗 Driver Portal</a>
+  <a href="admin.html">⚙️ Admin Portal</a>
+</aside>
 
 <div id="view-home" class="page-view active">
     <div class="video-hero" id="heroSlider">
@@ -418,15 +444,42 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
       if(id === 'book') setTimeout(() => map.invalidateSize(), 100);
   }
 
-  // MOBILE MENU
+  // MOBILE MENU — isolated drawer so desktop nav cannot block touch events
   const mobileMenuBtn=document.getElementById('mobileMenuBtn');
-  const mobileNav=document.querySelector('.nav-links');
+  const mobileDrawer=document.getElementById('mobileDrawer');
   const mobileOverlay=document.getElementById('mobileMenuOverlay');
-  function closeMobileMenu(){mobileNav.classList.remove('open');mobileOverlay.classList.remove('show');mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰';}
-  function toggleMobileMenu(){const open=mobileNav.classList.toggle('open');mobileOverlay.classList.toggle('show',open);mobileMenuBtn.setAttribute('aria-expanded',open?'true':'false');mobileMenuBtn.textContent=open?'✕':'☰';}
-  mobileMenuBtn.addEventListener('click',toggleMobileMenu);
-  mobileOverlay.addEventListener('click',closeMobileMenu);
-  mobileNav.querySelectorAll('button,a').forEach(el=>el.addEventListener('click',closeMobileMenu));
+  const mobileDrawerClose=document.getElementById('mobileDrawerClose');
+  function closeMobileMenu(){
+    if(!mobileDrawer)return;
+    mobileDrawer.classList.remove('open');
+    mobileOverlay.classList.remove('show');
+    document.body.classList.remove('mobile-menu-open');
+    mobileDrawer.setAttribute('aria-hidden','true');
+    mobileMenuBtn.setAttribute('aria-expanded','false');
+    mobileMenuBtn.textContent='☰';
+  }
+  function openMobileMenu(e){
+    if(e){e.preventDefault();e.stopPropagation();}
+    mobileDrawer.classList.add('open');
+    mobileOverlay.classList.add('show');
+    document.body.classList.add('mobile-menu-open');
+    mobileDrawer.setAttribute('aria-hidden','false');
+    mobileMenuBtn.setAttribute('aria-expanded','true');
+    mobileMenuBtn.textContent='✕';
+  }
+  mobileMenuBtn.addEventListener('click',openMobileMenu,false);
+  mobileDrawerClose.addEventListener('click',closeMobileMenu,false);
+  mobileOverlay.addEventListener('click',closeMobileMenu,false);
+  mobileDrawer.querySelectorAll('[data-mobile-view]').forEach(btn=>{
+    btn.addEventListener('click',function(e){
+      e.preventDefault(); e.stopPropagation();
+      switchView(this.getAttribute('data-mobile-view'));
+      closeMobileMenu();
+    },false);
+  });
+  mobileDrawer.querySelectorAll('a').forEach(a=>{
+    a.addEventListener('click',function(){ closeMobileMenu(); },false);
+  });
 
   function setupSug(id, sugId, isPick) {
       const input = document.getElementById(id), box = document.getElementById(sugId);
