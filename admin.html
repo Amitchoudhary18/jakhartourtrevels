@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Portal | Jakhar Travels</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+* { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { margin: 0; background: #f4f7f6; color: #142033; padding: 20px; }
+nav { display: flex; justify-content: space-between; align-items:center; background: #071a35; color: #fff; padding: 15px 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);}
+nav a { color: #f5b82e; text-decoration: none; font-weight: bold; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 8px;}
+
+.panel { background: #fff; border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+.admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 25px; }
+.stat-card { background: #f6f9fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e1e8f0; }
+.stat-card b { font-size: 28px; color: #0b74c9; }
+
+/* Tabs */
+.tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+.tab-btn { flex: 1; padding: 15px; border: none; background: #eef5fb; color: #071a35; font-weight: bold; border-radius: 10px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+.tab-btn.active { background: #0b74c9; color: #fff; box-shadow: 0 5px 15px rgba(11, 116, 201, 0.3); }
+
+table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff;}
+th, td { padding: 15px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+th { background: #071a35; color: #fff; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;}
+tr:hover { background: #f9fbfc; }
+select, button, input { padding: 10px; border-radius: 6px; border: 1px solid #ccc; outline: none;}
+button { background: #0b74c9; color: #fff; border: none; cursor: pointer; font-weight: bold; transition: 0.3s;}
+button:hover { background: #085a9c; }
+.save-btn { background: #27ae60; color: #fff; padding: 8px 12px; width: 100%; margin-bottom: 5px;}
+.save-btn:hover { background: #1e8449; }
+.cancel-btn { background: #e74c3c; color: #fff; padding: 8px 12px; width: 100%;}
+.cancel-btn:hover { background: #c0392b; }
+.status-badge { padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+
+#adminMap { height: 400px; width: 100%; border-radius: 12px; border: 2px solid #eef5fb; margin-bottom: 20px; z-index: 1;}
+
+/* ===== COLORFUL ADMIN THEME ===== */
+body{background:linear-gradient(135deg,#eef6ff 0%,#f8f2ff 48%,#fff7e8 100%);min-height:100vh}
+nav{background:linear-gradient(135deg,#071a35,#0b4f91 55%,#7b2cbf);box-shadow:0 10px 28px rgba(7,26,53,.22)}
+.panel{background:rgba(255,255,255,.92);border:1px solid rgba(11,116,201,.10);box-shadow:0 16px 40px rgba(40,55,90,.10)}
+.stat-card{background:linear-gradient(145deg,#fff,#eef7ff);border:1px solid #dcecff;box-shadow:0 8px 20px rgba(11,116,201,.07)}
+.stat-card:nth-child(2){background:linear-gradient(145deg,#fff,#fff7df)}.stat-card:nth-child(3){background:linear-gradient(145deg,#fff,#eafaf4)}.stat-card:nth-child(4){background:linear-gradient(145deg,#fff,#ffeef2)}.stat-card:nth-child(5){background:linear-gradient(145deg,#fff,#f1ecff)}
+.stat-card b{color:#7b2cbf}.tab-btn{background:#edf4ff}.tab-btn.active{background:linear-gradient(135deg,#0b74c9,#7b2cbf);box-shadow:0 8px 20px rgba(123,44,191,.22)}
+th{background:linear-gradient(135deg,#071a35,#0b74c9)}
+
+.driver-tools{margin-top:22px;padding:20px;border-radius:16px;background:linear-gradient(145deg,#f8fbff,#fff7ff);border:1px solid #e4e8f5}.driver-tools h3{margin-top:0}.driver-actions{display:flex;gap:8px;flex-wrap:wrap}.reset-btn{background:#7b2cbf!important}.delete-driver-btn{background:#e74c3c!important}.mini-btn{padding:8px 11px!important;font-size:12px!important;margin:0!important}.pin-note{font-size:12px;color:#6b7280;margin-top:8px}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<nav>
+    <div style="font-size:22px; font-weight:bold;"><i class="fa-solid fa-user-tie"></i> Admin Dashboard</div>
+    <div><a href="index.html">← Main Website</a></div>
+</nav>
+
+<!-- LOGIN -->
+<div class="panel" id="loginPanel" style="max-width: 400px; margin: 50px auto; text-align:center;">
+    <h2>Admin Access</h2>
+    <p style="color:#666; font-size:14px; margin-bottom:20px;">Enter your administrator PIN to access the dashboard.</p>
+    <input type="password" autocomplete="current-password" id="adminPin" placeholder="Enter PIN" style="width:100%; margin-bottom:15px; text-align:center; letter-spacing:5px; font-weight:bold; font-size:18px;">
+    <button onclick="login()" style="width:100%; padding:15px; font-size:16px;">Unlock Portal</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+    <div class="admin-stats">
+        <div class="stat-card">Total Bookings<br><b id="totalB">0</b></div>
+        <div class="stat-card">Pending<br><b id="penB" style="color:#f39c12;">0</b></div>
+        <div class="stat-card">Confirmed<br><b id="conB" style="color:#27ae60;">0</b></div>
+        <div class="stat-card">Cancelled<br><b id="canB" style="color:#e74c3c;">0</b></div>
+        <div class="stat-card" style="background:#e8f8f5; border-color:#27ae60;">Drivers On Duty<br><b id="onDutyD" style="color:#27ae60;">0</b></div>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab-btn active" id="btnTabBookings" onclick="switchTab('bookings')"><i class="fa-solid fa-table-list"></i> Manage Bookings</button>
+        <button class="tab-btn" id="btnTabDrivers" onclick="switchTab('drivers')"><i class="fa-solid fa-location-crosshairs"></i> Live Drivers & Map</button>
+    </div>
+    
+    <!-- Tab 1: Bookings -->
+    <div class="panel" id="tabBookings">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">Recent Bookings</h3>
+            <button onclick="loadData()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Customer</th>
+                        <th>Route & Car</th>
+                        <th>Travel Date</th>
+                        <th>Status</th>
+                        <th>Assign Driver</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTable"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Tab 2: Live Drivers Map -->
+    <div class="panel" id="tabDrivers" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0;"><i class="fa-solid fa-map-location-dot"></i> Live Driver Tracking</h3>
+            <button onclick="loadData()"><i class="fa-solid fa-rotate-right"></i> Refresh Map</button>
+        </div>
+        
+        <div id="adminMap"></div>
+        
+        <h3>Driver Status List</h3>
+        <table style="background:#f9fbfc;">
+            <thead>
+                <tr>
+                    <th>Driver ID & Name</th>
+                    <th>Mobile</th>
+                    <th>Vehicle</th>
+                    <th>Duty Status</th>
+                    <th>Last Location Update</th>
+                </tr>
+            </thead>
+            <tbody id="liveDriversTable"></tbody>
+        </table>
+
+        <div class="driver-tools">
+            <h3><i class="fa-solid fa-user-gear"></i> Driver Management</h3>
+            <p class="pin-note">Driver PIN screen par show nahi hoga. Agar driver PIN bhool jaye, Admin yahin se naya 4-digit PIN set kar sakta hai.</p>
+            <div style="overflow-x:auto;">
+              <table>
+                <thead><tr><th>Driver</th><th>Mobile</th><th>Vehicle</th><th>Account</th><th>Actions</th></tr></thead>
+                <tbody id="driverManagementTable"></tbody>
+              </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBHqSJW6RJkKDrUtPfRmgqQMYei58wBSks",
+  authDomain: "jakhar-tour-travels.firebaseapp.com",
+  projectId: "jakhar-tour-travels",
+  storageBucket: "jakhar-tour-travels.firebasestorage.app",
+  messagingSenderId: "295813687761",
+  appId: "1:295813687761:web:ff425781db24587a8298f0"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+let adminMap,mapMarkers=[],bookingsCache=[],driversCache=[],bookingsUnsub=null,driversUnsub=null;
+
+function login(){
+  if(document.getElementById('adminPin').value==='1234'){
+    document.getElementById('loginPanel').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    initMap(); subscribeData();
+  } else alert("Access Denied! Wrong PIN.");
+}
+function switchTab(tab){
+  document.getElementById('tabBookings').style.display=tab==='bookings'?'block':'none';
+  document.getElementById('tabDrivers').style.display=tab==='drivers'?'block':'none';
+  document.getElementById('btnTabBookings').classList.toggle('active',tab==='bookings');
+  document.getElementById('btnTabDrivers').classList.toggle('active',tab==='drivers');
+  if(tab==='drivers'&&adminMap) setTimeout(()=>adminMap.invalidateSize(),100);
+  renderAll();
+}
+function initMap(){
+  if(adminMap) return;
+  adminMap=L.map("adminMap").setView([26.9124,75.7873],10);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(adminMap);
+}
+function subscribeData(){
+  if(bookingsUnsub) bookingsUnsub(); if(driversUnsub) driversUnsub();
+  bookingsUnsub=db.collection('bookings').onSnapshot(s=>{bookingsCache=[];s.forEach(d=>bookingsCache.push(d.data()));bookingsCache.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));renderAll();},e=>alert("Firebase bookings error. Check Firestore Rules."));
+  driversUnsub=db.collection('drivers').onSnapshot(s=>{driversCache=[];s.forEach(d=>driversCache.push(d.data()));renderAll();},e=>alert("Firebase drivers error. Check Firestore Rules."));
+}
+function loadData(){ renderAll(); }
+function renderAll(){
+  document.getElementById('totalB').innerText=bookingsCache.length;
+  document.getElementById('penB').innerText=bookingsCache.filter(b=>b.status==='Pending').length;
+  document.getElementById('conB').innerText=bookingsCache.filter(b=>b.status==='Confirmed').length;
+  document.getElementById('canB').innerText=bookingsCache.filter(b=>b.status==='Cancelled').length;
+  document.getElementById('onDutyD').innerText=driversCache.filter(d=>d.onDuty===true).length;
+  renderBookings(); renderDrivers();
+}
+function renderBookings(){
+  let html='';
+  if(!bookingsCache.length) html='<tr><td colspan="7" style="text-align:center;padding:20px;color:#777;">No bookings found.</td></tr>';
+  bookingsCache.forEach(b=>{
+    const drvOptions=`<option value="">-- No Driver --</option>`+driversCache.map(d=>`<option value="${d.id}" ${b.driverId===d.id?'selected':''}>${d.id} - ${d.name} ${d.onDuty?'(🟢 ON)':'(🔴 OFF)'}</option>`).join('');
+    const statOptions=['Pending','Confirmed','Completed','Cancelled'].map(s=>`<option ${b.status===s?'selected':''}>${s}</option>`).join('');
+    const statColor=b.status==='Pending'?'#f39c12':(b.status==='Confirmed'?'#27ae60':(b.status==='Cancelled'?'#e74c3c':'#0b74c9'));
+    html+=`<tr><td><b style="color:#0b74c9;">${b.id}</b><br><small>${b.fare} (${b.payment})</small></td>
+    <td><b>${b.name}</b><br>${b.phone}</td><td>${b.route}<br><small><b>Car:</b> ${b.car}</small></td>
+    <td>${b.date}<br>${b.time}</td><td><select id="s_${b.id}" style="border-left:4px solid ${statColor}">${statOptions}</select></td>
+    <td><select id="d_${b.id}" style="max-width:180px;">${drvOptions}</select></td>
+    <td><button class="save-btn" onclick="saveBooking('${b.id}')"><i class="fa-solid fa-check"></i> Save</button>
+    ${b.status!=='Cancelled'?`<button class="cancel-btn" onclick="quickCancel('${b.id}')"><i class="fa-solid fa-xmark"></i> Cancel</button>`:`<span class="status-badge" style="background:#fee2e2;color:#e74c3c;">Cancelled</span>`}</td></tr>`;
+  });
+  document.getElementById('adminTable').innerHTML=html;
+}
+function renderDrivers(){
+  mapMarkers.forEach(m=>adminMap&&adminMap.removeLayer(m)); mapMarkers=[]; let html='',bounds=[];
+  if(!driversCache.length) html='<tr><td colspan="5" style="text-align:center;">No registered drivers.</td></tr>';
+  driversCache.forEach(d=>{
+    const badge=d.onDuty?`<span class="status-badge" style="background:#e8f8f5;color:#27ae60;">🟢 ON DUTY</span>`:`<span class="status-badge" style="background:#f2f4f4;color:#7f8c8d;">🔴 OFF DUTY</span>`;
+    const loc=(d.lat!=null&&d.lng!=null)?`Lat: ${Number(d.lat).toFixed(4)}, Lng: ${Number(d.lng).toFixed(4)}<br><small>${d.lastLocationTime||''}</small>`:`<span style="color:#e74c3c;">Location not shared</span>`;
+    html+=`<tr><td><b>${d.id}</b><br>${d.name}</td><td>${d.mobile}</td><td>${d.vehicleType}<br><small>${d.vehicleNo}</small></td><td>${badge}</td><td>${loc}</td></tr>`;
+    if(d.onDuty&&d.lat!=null&&d.lng!=null&&adminMap){
+      const marker=L.marker([d.lat,d.lng]).addTo(adminMap).bindPopup(`<b>${d.name}</b> (${d.id})<br>${d.mobile}<br>Status: 🟢 On Duty`);
+      mapMarkers.push(marker); bounds.push([d.lat,d.lng]);
+    }
+  });
+  document.getElementById('liveDriversTable').innerHTML=html;
+  const mgmt=document.getElementById('driverManagementTable');
+  if(mgmt){
+    mgmt.innerHTML=driversCache.length?driversCache.map(d=>`<tr><td><b>${d.id}</b><br>${d.name}</td><td>${d.mobile}</td><td>${d.vehicleType}<br><small>${d.vehicleNo}</small></td><td>${d.onDuty?'🟢 Active / On Duty':'⚪ Active / Off Duty'}</td><td><div class="driver-actions"><button class="mini-btn reset-btn" onclick="resetDriverPin('${d.id}')"><i class="fa-solid fa-key"></i> Reset PIN</button><button class="mini-btn delete-driver-btn" onclick="deleteDriver('${d.id}')"><i class="fa-solid fa-trash"></i> Remove Driver</button></div></td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;">No registered drivers.</td></tr>';
+  }
+  if(bounds.length&&adminMap) adminMap.fitBounds(bounds,{padding:[50,50],maxZoom:14});
+}
+async function resetDriverPin(id){
+  const d=driversCache.find(x=>x.id===id); if(!d)return;
+  const pin=prompt(`New 4-digit PIN for ${d.name} (${d.id}):`);
+  if(pin===null)return;
+  if(!/^\d{4}$/.test(pin))return alert('PIN exactly 4 digits ka hona chahiye.');
+  try{await db.collection('drivers').doc(id).update({pin}); alert(`PIN reset ho gaya.\nDriver ID: ${id}\nNew PIN: ${pin}`);}
+  catch(e){console.error(e);alert('PIN reset nahi ho saka. Firestore Rules check karein.');}
+}
+async function deleteDriver(id){
+  const d=driversCache.find(x=>x.id===id); if(!d)return;
+  if(!confirm(`Driver ${d.name} (${id}) ko permanently remove karna hai?`))return;
+  try{
+    await db.collection('drivers').doc(id).delete();
+    const assigned=bookingsCache.filter(b=>b.driverId===id);
+    await Promise.all(assigned.map(b=>db.collection('bookings').doc(b.id).update({driverId:'',driverName:'',status:b.status==='Confirmed'?'Pending':b.status})));
+    alert('Driver successfully removed.');
+  }catch(e){console.error(e);alert('Driver remove nahi ho saka. Firestore Rules check karein.');}
+}
+async function saveBooking(id){
+  const status=document.getElementById('s_'+id).value;
+  const driverId=document.getElementById('d_'+id).value;
+  const drv=driversCache.find(d=>d.id===driverId);
+  try{await db.collection('bookings').doc(id).update({status,driverId:driverId||'',driverName:drv?drv.name:''});alert('Booking saved!');}
+  catch(e){console.error(e);alert('Could not save booking. Check Firestore Rules.');}
+}
+async function quickCancel(id){
+  if(!confirm(`Are you sure you want to CANCEL booking ${id}?`)) return;
+  try{await db.collection('bookings').doc(id).update({status:'Cancelled',driverId:'',driverName:''});}
+  catch(e){alert('Could not cancel booking.');}
+}
+</script>
+</body>
+</html>
