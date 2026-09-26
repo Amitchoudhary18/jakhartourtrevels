@@ -247,28 +247,54 @@ function showDutyPopup(message){
 // Browser-safe sounds: the ON/OFF button is a user gesture, so mobile browsers allow playback.
 function getAudioContext(){
   const C=window.AudioContext||window.webkitAudioContext; if(!C)return null;
-  if(!window.jttAudio)window.jttAudio=new C();
+  if(!window.jttAudio){
+    window.jttAudio=new C();
+    window.jttMaster=window.jttAudio.createGain();
+    window.jttMaster.gain.value=0.95;
+    window.jttMaster.connect(window.jttAudio.destination);
+  }
   if(window.jttAudio.state==='suspended')window.jttAudio.resume();
   return window.jttAudio;
 }
-function tone(ctx,freq,start,duration,gain,type='sine'){
-  const o=ctx.createOscillator(),g=ctx.createGain(); o.type=type;o.frequency.setValueAtTime(freq,start);
-  g.gain.setValueAtTime(.0001,start);g.gain.exponentialRampToValueAtTime(gain,start+.02);g.gain.exponentialRampToValueAtTime(.0001,start+duration);
-  o.connect(g);g.connect(ctx.destination);o.start(start);o.stop(start+duration+.03);
+function engineOsc(ctx,freq,start,duration,gain,type='sawtooth',detune=0){
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,start); o.detune.value=detune;
+  g.gain.setValueAtTime(0.0001,start);
+  g.gain.exponentialRampToValueAtTime(gain,start+0.025);
+  g.gain.exponentialRampToValueAtTime(Math.max(gain*.72,0.0002),start+duration*.55);
+  g.gain.exponentialRampToValueAtTime(0.0001,start+duration);
+  o.connect(g);g.connect(window.jttMaster);o.start(start);o.stop(start+duration+.04);
+}
+function engineNoise(ctx,start,duration,gain){
+  const len=Math.floor(ctx.sampleRate*duration),buf=ctx.createBuffer(1,len,ctx.sampleRate),data=buf.getChannelData(0);
+  for(let i=0;i<len;i++) data[i]=(Math.random()*2-1)*0.7;
+  const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),g=ctx.createGain();
+  src.buffer=buf; filter.type='lowpass'; filter.frequency.setValueAtTime(900,start);
+  filter.frequency.exponentialRampToValueAtTime(260,start+duration);
+  g.gain.setValueAtTime(0.0001,start); g.gain.exponentialRampToValueAtTime(gain,start+.02); g.gain.exponentialRampToValueAtTime(.0001,start+duration);
+  src.connect(filter);filter.connect(g);g.connect(window.jttMaster);src.start(start);src.stop(start+duration);
 }
 function playEngineStartSound(){
-  const c=getAudioContext(); if(!c)return; const t=c.currentTime;
-  // Short engine-crank → ignition → idle style sequence
-  tone(c,72,t,.22,.13,'sawtooth'); tone(c,92,t+.16,.20,.11,'sawtooth'); tone(c,118,t+.34,.16,.10,'sawtooth');
-  tone(c,180,t+.50,.70,.055,'sine');
+  const c=getAudioContext(); if(!c)return; const t=c.currentTime+0.03;
+  // Loud car-start sequence: starter crank -> ignition -> engine catches -> idle rumble.
+  engineNoise(c,t,.95,.28);
+  engineOsc(c,58,t,.30,.28,'sawtooth',-8); engineOsc(c,63,t,.30,.23,'sawtooth',8);
+  engineOsc(c,68,t+.27,.28,.30,'sawtooth',-7); engineOsc(c,74,t+.27,.28,.25,'sawtooth',7);
+  engineOsc(c,78,t+.52,.22,.34,'sawtooth',-6); engineOsc(c,84,t+.52,.22,.28,'sawtooth',6);
+  // Engine catches and rises in RPM.
+  engineOsc(c,105,t+.68,.55,.38,'sawtooth',-5); engineOsc(c,112,t+.68,.55,.30,'sawtooth',5);
+  engineOsc(c,145,t+.82,.42,.25,'sine'); engineOsc(c,290,t+.86,.32,.10,'triangle');
+  // Deep idle continues briefly so it feels like the vehicle has started.
+  engineOsc(c,72,t+1.08,1.15,.30,'sawtooth',-4); engineOsc(c,76,t+1.08,1.15,.24,'sawtooth',4);
+  engineOsc(c,144,t+1.08,1.15,.12,'sine');
 }
 function playDutyOffSound(){
   const c=getAudioContext(); if(!c)return; const t=c.currentTime;
-  tone(c,520,t,.14,.07,'sine'); tone(c,360,t+.13,.22,.06,'sine');
+  engineOsc(c,500,t,.16,.12,'sine'); engineOsc(c,350,t+.14,.28,.10,'sine');
 }
 function playNewBookingSound(){
   const c=getAudioContext(); if(!c)return; const t=c.currentTime;
-  tone(c,880,t,.13,.09,'sine'); tone(c,1175,t+.14,.16,.10,'sine'); tone(c,880,t+.32,.22,.08,'sine');
+  engineOsc(c,880,t,.14,.15,'sine'); engineOsc(c,1175,t+.14,.17,.16,'sine'); engineOsc(c,880,t+.32,.25,.13,'sine');
 }
 
 function updateDutyUI() {
@@ -317,7 +343,7 @@ function renderJobs(myJobs) {
           <p style="margin:5px 0;"><b>Date & Time:</b> ${b.date} at ${b.time}</p>
           <p style="margin:5px 0;"><b>Requested Car:</b> ${b.car}</p>
           <p style="margin:5px 0;"><b>Total Fare:</b> <span style="font-size:18px;font-weight:bold;color:#27ae60;">${b.fare}</span> (${b.payment})</p>
-          ${!isMine && b.status==='Pending' ? `<button onclick="acceptJob('${b.id}')" style="margin-top:10px;"><i class="fa-solid fa-check"></i> Accept This Booking</button>` : `<div style="margin-top:10px;background:#e8f8f5;padding:10px;border-radius:8px;color:#0f8a62;font-weight:bold;">✓ This job is assigned to you.</div>`}
+          ${!isMine && b.status==='Pending' ? `<button onclick="acceptJob('${b.id}')" style="margin-top:10px;"><i class="fa-solid fa-check"></i> Accept This Booking</button>` : `<div style="margin-top:10px;background:#e8f8f5;padding:10px;border-radius:8px;color:#0f8a62;font-weight:bold;">✓ This job is assigned to you.</div><button onclick="sendWhatsAppConfirmation('${encodeURIComponent(b.id)}')" style="margin-top:10px;background:#25D366;"><i class="fa-brands fa-whatsapp"></i> Send WhatsApp Confirmation</button>`}
         </div>`;
     });
     document.getElementById('jobList').innerHTML=html;
@@ -331,9 +357,31 @@ async function acceptJob(id) {
         if(!snap.exists) return alert("Booking no longer exists.");
         const b=snap.data();
         if(b.status!=='Pending' || b.driverId) return alert("This booking has already been assigned.");
-        await ref.update({driverId:currentDriver.id,driverName:currentDriver.name,status:'Confirmed'});
-        alert("Job Accepted! Drive safely.");
+        await ref.update({driverId:currentDriver.id,driverName:currentDriver.name,driverMobile:currentDriver.mobile||'',driverVehicle:currentDriver.vehicleNo||'',status:'Confirmed'});
+        alert("Job Accepted! Drive safely.\n\nWhatsApp confirmation bhejne ke liye isi booking ke neeche WhatsApp button dabayein.");
     } catch(e) { console.error(e); alert("Could not accept booking. Please try again."); }
+}
+
+async function sendWhatsAppConfirmation(encodedId){
+    try{
+        const id=decodeURIComponent(encodedId);
+        const snap=await db.collection('bookings').doc(id).get();
+        if(!snap.exists) return alert('Booking not found.');
+        const b=snap.data();
+        if(b.driverId!==currentDriver.id || b.status!=='Confirmed') return alert('Please confirm/accept this booking first.');
+        const number=normalizeWhatsAppNumber(b.phone);
+        if(!number) return alert('Customer mobile number is not valid.');
+        const url=`https://wa.me/${number}?text=${encodeURIComponent(buildDriverConfirmationMessage(b))}`;
+        window.open(url,'_blank','noopener');
+    }catch(e){console.error(e);alert('WhatsApp open nahi ho saka.');}
+}
+
+function normalizeWhatsAppNumber(phone){
+    const p=String(phone||'').replace(/\D/g,'');
+    return p.length===10 ? '91'+p : p;
+}
+function buildDriverConfirmationMessage(b){
+    return `Jakhar Tour Travels - Booking Confirmed\n\nBooking ID: ${b.id}\nCustomer: ${b.name}\nRoute: ${b.route}\nTravel: ${b.date} at ${b.time}\nCar: ${b.car}\nDriver: ${currentDriver.name}${currentDriver.mobile?'\nDriver Mobile: '+currentDriver.mobile:''}${currentDriver.vehicleNo?'\nVehicle No: '+currentDriver.vehicleNo:''}\nFare: ${b.fare}\nPayment: ${b.payment}\n\nYour cab booking is confirmed. Please keep this message for your journey.`;
 }
 
 function logout() {
