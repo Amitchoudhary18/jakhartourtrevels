@@ -171,6 +171,7 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
 <!-- Firebase Compat Libraries (Simple & Works Everywhere) -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 </head>
 <body>
@@ -283,14 +284,15 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
 </div>
 
 <div id="view-mybooking" class="page-view">
-    <div class="book-container" style="max-width: 800px;">
+    <div class="book-container" style="max-width: 850px;">
         <div class="panel" style="text-align: center;">
             <h2>Track Your Booking</h2>
-            <div style="display: flex; gap: 15px; margin: 20px 0;">
-                <input type="text" id="searchId" placeholder="Booking ID">
-                <button class="btn primary" style="width:200px;" onclick="searchMyBooking()">Search</button>
+            <p style="color:#667085;margin-top:-6px;">Ticket dekhne aur live status ke liye wahi mobile number enter karein jo booking ke time diya tha.</p>
+            <div style="display:flex;gap:12px;margin:20px 0;align-items:stretch;">
+                <input type="tel" id="searchPhone" maxlength="10" inputmode="numeric" placeholder="Customer Mobile Number" style="flex:1;">
+                <button class="btn primary" style="min-width:160px;" onclick="searchMyBooking()"><i class="fa-solid fa-magnifying-glass"></i> Track</button>
             </div>
-            <div id="bookingResultArea" style="text-align: left;"></div>
+            <div id="bookingResultArea" style="text-align:left;"></div>
         </div>
     </div>
 </div>
@@ -550,8 +552,8 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
 
   // FIREBASE WRITE (SAVE BOOKING)
   function confirmBooking() {
-      const name = document.getElementById("passName").value, phone = document.getElementById("passPhone").value;
-      if(!name || phone.length < 10) return alert("Fill Name and Mobile properly.");
+      const name = document.getElementById("passName").value.trim(), phone = document.getElementById("passPhone").value.replace(/\D/g, "");
+      if(!name || !/^\d{10}$/.test(phone)) return alert("Fill Name and Mobile properly.");
       
       latestBookingId = "JTT-" + Math.floor(100000 + Math.random() * 900000);
       const newBooking = {
@@ -571,27 +573,102 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
       });
   }
 
-  // FIREBASE READ (TRACK BOOKING)
+  // FIREBASE READ (TRACK BY CUSTOMER MOBILE + LIVE STATUS)
+  let trackingUnsub = null;
   function searchMyBooking() {
-      const id = document.getElementById("searchId").value.trim().toUpperCase();
-      if(!id) return alert("Enter Booking ID");
-      
-      db.collection("bookings").doc(id).get().then((docSnap) => {
-          if (docSnap.exists) {
-              const b = docSnap.data();
-              document.getElementById("bookingResultArea").innerHTML = `
-                <div style="background:#fff; border-left:6px solid #0b74c9; border-radius:10px; padding:20px; margin-top:20px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">
-                    <h3>ID: ${b.id}</h3>
-                    <span style="background:#eef6ff; color:#0b74c9; padding:5px 10px; border-radius:10px; font-weight:bold;">${b.status}</span>
-                    <p><b>Route:</b> ${b.route}</p>
-                    <p><b>Travel:</b> ${b.date} at ${b.time}</p>
-                    <p><b>Fare:</b> <span style="color:#27ae60; font-weight:bold;">${b.fare}</span> (${b.payment})</p>
-                    <p style="background:#f9fbfc; padding:10px; border-radius:5px;"><b>Driver:</b> ${b.driverName || '<span style="color:#e74c3c;">Pending assignment...</span>'}</p>
-                </div>`;
-          } else {
-              document.getElementById("bookingResultArea").innerHTML = `<div style="color:red; margin-top:20px; font-weight:bold;">No booking found! Check ID.</div>`;
+      const phone = document.getElementById("searchPhone").value.replace(/\D/g, "");
+      const area = document.getElementById("bookingResultArea");
+      if(!/^\d{10}$/.test(phone)) return alert("Please enter a valid 10-digit mobile number.");
+      if(trackingUnsub) { trackingUnsub(); trackingUnsub=null; }
+      area.innerHTML = `<div style="padding:18px;text-align:center;color:#667085;"><i class="fa-solid fa-spinner fa-spin"></i> Booking search ho rahi hai...</div>`;
+      trackingUnsub = db.collection("bookings").where("phone","==",phone).onSnapshot((snap) => {
+          if(snap.empty) {
+              area.innerHTML = `<div style="margin-top:20px;padding:18px;border-radius:10px;background:#fff3f3;color:#c0392b;font-weight:bold;text-align:center;">No booking found for this mobile number.</div>`;
+              return;
           }
+          const bookings = [];
+          snap.forEach(doc => bookings.push(doc.data()));
+          bookings.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+          area.innerHTML = bookings.map(b => renderCustomerTicket(b)).join('');
+      }, (err) => {
+          console.error(err);
+          area.innerHTML = `<div style="margin-top:20px;color:red;font-weight:bold;">Booking track nahi ho pa rahi. Firebase Rules check karein.</div>`;
       });
+  }
+
+  function escapeHtml(v){
+      return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  }
+
+  function statusColor(status){
+      if(status==='Confirmed') return '#0f8a62';
+      if(status==='Completed') return '#2563eb';
+      if(status==='Cancelled') return '#dc2626';
+      return '#b7791f';
+  }
+
+  function renderCustomerTicket(b){
+      const safe = encodeURIComponent(b.id);
+      const driver = b.driverName ? escapeHtml(b.driverName) : 'Pending assignment...';
+      const status = escapeHtml(b.status || 'Pending');
+      const whatsapp = b.status==='Confirmed' && b.driverName ? `<a class="btn" style="display:inline-flex;background:#25D366;color:#fff;text-decoration:none;margin:8px 8px 0 0;" target="_blank" rel="noopener" href="https://wa.me/${normalizeWhatsAppNumber(b.phone)}?text=${encodeURIComponent(buildCustomerWhatsAppMessage(b))}"><i class="fa-brands fa-whatsapp"></i> WhatsApp Confirmation</a>` : '';
+      return `<div class="customer-ticket" data-ticket-id="${safe}" style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;margin-top:18px;box-shadow:0 7px 22px rgba(0,0,0,.08);">\
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px dashed #d7dde5;padding-bottom:12px;">\
+          <h3 style="margin:0;color:#071a35;">🎫 Jakhar Tour Travels</h3>\
+          <span style="background:${statusColor(b.status)};color:#fff;padding:7px 12px;border-radius:20px;font-weight:700;">${status}</span>\
+        </div>\
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">\
+          <div><b>Booking ID</b><br>${escapeHtml(b.id)}</div>\
+          <div><b>Customer</b><br>${escapeHtml(b.name)}</div>\
+          <div><b>Mobile</b><br>${escapeHtml(b.phone)}</div>\
+          <div><b>Travel</b><br>${escapeHtml(b.date)} at ${escapeHtml(b.time)}</div>\
+          <div style="grid-column:1/-1"><b>Route</b><br>${escapeHtml(b.route)}</div>\
+          <div><b>Car</b><br>${escapeHtml(b.car)}</div>\
+          <div><b>Fare</b><br><strong style="color:#0b74c9;">${escapeHtml(b.fare)}</strong> (${escapeHtml(b.payment)})</div>\
+          <div style="grid-column:1/-1;background:#f8fafc;padding:11px;border-radius:9px;"><b>Driver</b><br>${driver}${b.driverVehicle ? ' • '+escapeHtml(b.driverVehicle) : ''}${b.driverMobile ? ' • '+escapeHtml(b.driverMobile) : ''}</div>\
+        </div>\
+        <div style="margin-top:15px;display:flex;flex-wrap:wrap;gap:8px;">\
+          <button class="btn primary" onclick="downloadTicket('${safe}')"><i class="fa-solid fa-download"></i> Download Ticket</button>\
+          ${whatsapp}\
+        </div>\
+      </div>`;
+  }
+
+  function normalizeWhatsAppNumber(phone){
+      const p=String(phone||'').replace(/\D/g,'');
+      return p.length===10 ? '91'+p : p;
+  }
+
+  function buildCustomerWhatsAppMessage(b){
+      return `Jakhar Tour Travels - Booking Confirmation\n\nBooking ID: ${b.id}\nCustomer: ${b.name}\nRoute: ${b.route}\nTravel: ${b.date} at ${b.time}\nCar: ${b.car}\nDriver: ${b.driverName||'Assigned'}${b.driverMobile?'\nDriver Mobile: '+b.driverMobile:''}${b.driverVehicle?'\nVehicle No: '+b.driverVehicle:''}\nFare: ${b.fare}\nPayment: ${b.payment}\n\nYour booking has been confirmed. Please keep this ticket for your journey.`;
+  }
+
+  function downloadTicket(encodedId){
+      const id=decodeURIComponent(encodedId);
+      db.collection('bookings').doc(id).get().then(doc=>{
+          if(!doc.exists) return alert('Ticket not found.');
+          const b=doc.data();
+          if(!window.jspdf || !window.jspdf.jsPDF) return alert('PDF generator load nahi hua. Internet check karke dobara try karein.');
+          const {jsPDF}=window.jspdf;
+          const pdf=new jsPDF();
+          let y=20;
+          pdf.setFontSize(20); pdf.text('Jakhar Tour Travels',20,y); y+=10;
+          pdf.setFontSize(11); pdf.text('Cab Booking Ticket',20,y); y+=14;
+          pdf.setFontSize(12);
+          const rows=[
+            ['Booking ID',b.id],['Status',b.status],['Customer',b.name],['Mobile',b.phone],
+            ['Route',b.route],['Travel Date',b.date],['Pickup Time',b.time],['Car',b.car],
+            ['Distance',b.distance],['Fare',b.fare],['Payment',b.payment],
+            ['Driver',b.driverName||'Pending assignment'],['Driver Mobile',b.driverMobile||'Not assigned'],['Vehicle No.',b.driverVehicle||'Not assigned']
+          ];
+          rows.forEach(([k,v])=>{
+            const text=pdf.splitTextToSize(`${k}: ${v||''}`,170);
+            pdf.text(text,20,y); y+=7*text.length+2;
+            if(y>275){pdf.addPage();y=20;}
+          });
+          y+=5; pdf.setFontSize(9); pdf.text('Thank you for travelling with Jakhar Tour Travels.',20,y);
+          pdf.save(`${b.id}-Jakhar-Tour-Travels-Ticket.pdf`);
+      }).catch(e=>{console.error(e);alert('Ticket download nahi ho saka.');});
   }
 </script>
 </body>
