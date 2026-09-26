@@ -46,11 +46,43 @@ button{background:linear-gradient(135deg,#0f8a62,#0b74c9);box-shadow:0 6px 15px 
 button:hover{background:linear-gradient(135deg,#0b6b4c,#085a9c)}
 .tab-btn.active{background:linear-gradient(135deg,#0f8a62,#0b74c9);box-shadow:0 7px 18px rgba(15,138,98,.2)}
 .job-card{background:linear-gradient(145deg,#fff,#f1fbf8);border-left-color:#0f8a62;box-shadow:0 8px 22px rgba(15,138,98,.06)}
+
+/* ===== DRIVER MOBILE RESPONSIVE ===== */
+@media(max-width:700px){
+  body{padding:0!important;min-height:100vh}
+  nav{margin:0 0 12px!important;border-radius:0!important;padding:12px 14px!important;gap:10px}
+  nav>div:first-child{font-size:18px!important}
+  nav>div:last-child a{padding:8px 10px!important;font-size:12px}
+  .panel{width:calc(100% - 20px)!important;max-width:none!important;margin:10px auto!important;padding:18px!important;border-radius:16px!important}
+  .form-grid{grid-template-columns:1fr!important;gap:12px}
+  .full-width{grid-column:auto!important}
+  .tab-buttons{gap:7px}
+  .tab-btn{font-size:14px!important;padding:12px!important}
+  .duty-card{padding:16px 12px!important}
+  .duty-status{font-size:20px!important}
+  .toggle-btn{width:100%!important;margin:5px 0!important;padding:13px 10px!important}
+  .loc-btn{width:100%!important;margin-top:10px!important}
+  #dashboard>div:first-child{gap:10px;align-items:flex-start!important}
+  #dashboard>div:first-child h2{font-size:18px!important;line-height:1.3}
+  #dashboard>div:first-child button{font-size:12px!important;white-space:nowrap}
+  .job-card{padding:15px!important}
+  .job-card h3{font-size:16px!important}
+  .job-card p{font-size:13px!important;overflow-wrap:anywhere}
+  .job-card button{font-size:14px!important}
+}
+@media(min-width:701px){body{min-height:100vh}}
+/* Duty feedback */
+.duty-card.duty-active{border-color:#27ae60;box-shadow:0 0 0 4px rgba(39,174,96,.10),0 14px 35px rgba(39,174,96,.16);animation:dutyPulse 2s ease-in-out infinite}
+@keyframes dutyPulse{50%{transform:translateY(-2px)}}
+.duty-popup{position:fixed;left:50%;top:82px;transform:translateX(-50%) translateY(-15px);z-index:50000;opacity:0;pointer-events:none;background:linear-gradient(135deg,#075e54,#0f8a62);color:#fff;padding:13px 20px;border-radius:14px;box-shadow:0 12px 35px rgba(0,0,0,.25);font-weight:800;font-size:15px;transition:.28s ease;white-space:nowrap}
+.duty-popup.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:500px){.duty-popup{top:72px;max-width:90vw;text-align:center;white-space:normal}}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
+<div id="dutyPopup" class="duty-popup" role="status" aria-live="polite"></div>
 
 <nav>
     <div style="font-size:22px; font-weight:bold;"><i class="fa-solid fa-steering-wheel"></i> Driver Portal</div>
@@ -188,17 +220,63 @@ function subscribeDriver() {
     });
 }
 
-function setDuty(status) {
+async function setDuty(status) {
     if(!currentDriver) return;
-    db.collection('drivers').doc(currentDriver.id).update({onDuty:status})
-      .then(()=>{ currentDriver.onDuty=status; updateDutyUI(); if(status) startLiveLocation(); else { stopLiveLocation(); document.getElementById('locStatus').innerText='🔴 Live location sharing stopped.'; } })
-      .catch(e=>alert("Could not update duty status."));
+    try {
+      await db.collection('drivers').doc(currentDriver.id).update({onDuty:status});
+      currentDriver.onDuty=status; updateDutyUI();
+      if(status){
+        showDutyPopup('🟢 DUTY ON — गाड़ी स्टार्ट हो गई है');
+        playEngineStartSound();
+        startLiveLocation();
+      } else {
+        stopLiveLocation();
+        document.getElementById('locStatus').innerText='🔴 Live location sharing stopped.';
+        showDutyPopup('🔴 DUTY OFF — आज की ड्यूटी बंद');
+        playDutyOffSound();
+      }
+    } catch(e){ console.error(e); alert("Could not update duty status."); }
+}
+
+function showDutyPopup(message){
+  const p=document.getElementById('dutyPopup'); if(!p)return;
+  p.textContent=message; p.classList.add('show');
+  clearTimeout(window.dutyPopupTimer); window.dutyPopupTimer=setTimeout(()=>p.classList.remove('show'),2600);
+}
+
+// Browser-safe sounds: the ON/OFF button is a user gesture, so mobile browsers allow playback.
+function getAudioContext(){
+  const C=window.AudioContext||window.webkitAudioContext; if(!C)return null;
+  if(!window.jttAudio)window.jttAudio=new C();
+  if(window.jttAudio.state==='suspended')window.jttAudio.resume();
+  return window.jttAudio;
+}
+function tone(ctx,freq,start,duration,gain,type='sine'){
+  const o=ctx.createOscillator(),g=ctx.createGain(); o.type=type;o.frequency.setValueAtTime(freq,start);
+  g.gain.setValueAtTime(.0001,start);g.gain.exponentialRampToValueAtTime(gain,start+.02);g.gain.exponentialRampToValueAtTime(.0001,start+duration);
+  o.connect(g);g.connect(ctx.destination);o.start(start);o.stop(start+duration+.03);
+}
+function playEngineStartSound(){
+  const c=getAudioContext(); if(!c)return; const t=c.currentTime;
+  // Short engine-crank → ignition → idle style sequence
+  tone(c,72,t,.22,.13,'sawtooth'); tone(c,92,t+.16,.20,.11,'sawtooth'); tone(c,118,t+.34,.16,.10,'sawtooth');
+  tone(c,180,t+.50,.70,.055,'sine');
+}
+function playDutyOffSound(){
+  const c=getAudioContext(); if(!c)return; const t=c.currentTime;
+  tone(c,520,t,.14,.07,'sine'); tone(c,360,t+.13,.22,.06,'sine');
+}
+function playNewBookingSound(){
+  const c=getAudioContext(); if(!c)return; const t=c.currentTime;
+  tone(c,880,t,.13,.09,'sine'); tone(c,1175,t+.14,.16,.10,'sine'); tone(c,880,t+.32,.22,.08,'sine');
 }
 
 function updateDutyUI() {
     const dt=document.getElementById('dutyText');
-    if(currentDriver && currentDriver.onDuty) dt.innerHTML=`Status: <span class="duty-on">🟢 ON DUTY</span>`;
-    else dt.innerHTML=`Status: <span class="duty-off">🔴 OFF DUTY</span>`;
+    const card=dt.closest('.duty-card');
+    const on=!!(currentDriver && currentDriver.onDuty);
+    dt.innerHTML=on?`Status: <span class="duty-on">🟢 ON DUTY • ACTIVE</span>`:`Status: <span class="duty-off">🔴 OFF DUTY</span>`;
+    if(card)card.classList.toggle('duty-active',on);
 }
 
 let locationWatchId=null;
@@ -209,11 +287,19 @@ function shareLocation(){if(!currentDriver||!currentDriver.onDuty)return alert('
 
 function loadJobs() {
     if(jobsUnsub) jobsUnsub();
+    let firstSnapshot=true;
     jobsUnsub=db.collection('bookings').onSnapshot(snap=>{
-        const jobs=[];
+        const jobs=[]; let newPending=false;
+        snap.docChanges().forEach(ch=>{ if(ch.type==='added' && ch.doc.data().status==='Pending') newPending=true; });
         snap.forEach(doc=>{ const b=doc.data(); if(b.status==='Pending' || b.driverId===currentDriver.id) jobs.push(b); });
         jobs.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
         renderJobs(jobs);
+        if(!firstSnapshot && newPending && currentDriver && currentDriver.onDuty){
+          showDutyPopup('🔔 नई booking मिली — तुरंत देखें');
+          playNewBookingSound();
+          if(navigator.vibrate) navigator.vibrate([180,80,180]);
+        }
+        firstSnapshot=false;
     },err=>{ console.error(err); document.getElementById('jobList').innerHTML="<div style='color:red;padding:20px;'>Unable to load Firebase bookings.</div>"; });
 }
 
