@@ -48,10 +48,13 @@ nav { background: rgba(7, 26, 53, 0.95); backdrop-filter: blur(10px); padding: 1
 /* DESTINATIONS GRID */
 .destinations-sec { padding: 80px 20px; max-width: 1300px; margin: auto; text-align: center; }
 .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; margin-top: 40px;}
-.dest-card { border-radius: 20px; overflow: hidden; position: relative; cursor: pointer; height: 350px; background: #000; transition: 0.3s; }
+.dest-card { border-radius: 20px; overflow: hidden; position: relative; cursor: pointer; height: 350px; background: linear-gradient(135deg,#0b4f91,#0b74c9 55%,#f5b82e); transition: 0.3s; }
 .dest-card:hover { transform: translateY(-10px); }
-.dest-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: 0.5s; }
-.dest-card:hover img { opacity: 0.5; transform: scale(1.1); }
+.dest-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.45s ease, transform 0.5s; display:block; }
+.dest-card img.loaded { opacity: 0.82; }
+.dest-card img.failed { opacity: 0; }
+.dest-card:hover img.loaded { opacity: 0.5; transform: scale(1.1); }
+.dest-card:after { content:""; position:absolute; inset:0; background:linear-gradient(to top,rgba(3,16,35,.72),rgba(3,16,35,.04) 65%); pointer-events:none; z-index:1; }
 .dest-info { position: absolute; bottom: 20px; left: 20px; color: #fff; z-index: 2; text-align: left;}
 
 /* BOOKING WIDGET */
@@ -91,13 +94,13 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
 
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 900px){
-  nav{padding:10px 16px;flex-wrap:wrap;gap:8px;}
+  nav{padding:10px 16px;}
   .logo{font-size:20px;gap:7px}.logo span{font-size:10px;letter-spacing:1px}
-  .nav-links{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;order:3}
+  .nav-links{width:auto;display:flex}
   .nav-links button,.nav-links a{font-size:12px;padding:9px 5px;text-align:center}
-  .portal-links{display:contents;margin:0;padding:0;border:0}
+  
   .portal-links a{font-size:12px;padding:9px 5px}
-  .page-view{padding-top:125px}
+  .page-view{padding-top:64px}
   .hero-content h1{font-size:42px;line-height:1.12}.hero-content p{font-size:17px;margin-bottom:25px}
   .video-hero{height:78vh;min-height:560px}
   .destinations-sec{padding:50px 14px}.grid-container{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dest-card{height:230px;border-radius:14px}
@@ -107,8 +110,8 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
   .modal-content{padding:25px 18px;width:94%}
 }
 @media (max-width: 520px){
-  nav{padding:9px 10px}.nav-links{grid-template-columns:repeat(2,1fr)}
-  .portal-links a{font-size:11px}.page-view{padding-top:165px}
+  nav{padding:9px 10px}
+  .portal-links a{font-size:11px}.page-view{padding-top:64px}
   .hero-content{padding:15px}.hero-content h1{font-size:31px}.hero-content p{font-size:14px}.btn-large{font-size:15px;padding:14px 25px}
   .grid-container{grid-template-columns:1fr 1fr}.dest-card{height:190px}.dest-info{left:12px;bottom:12px}.dest-info h3{font-size:15px}.dest-info p{font-size:11px}
   .panel{padding:15px}.formgrid{gap:13px}input,select{padding:13px 14px;font-size:14px}.btn{padding:14px 18px;font-size:14px}
@@ -128,6 +131,24 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
   .hero-arrow { width: 36px; height: 36px; }
   .hero-dots { bottom: 70px; }
 }
+
+/* MOBILE HAMBURGER MENU */
+.mobile-menu-btn{display:none}
+.mobile-menu-overlay{display:none}
+@media(max-width:900px){
+  nav{height:64px;padding:9px 14px;flex-wrap:nowrap;gap:8px}
+  .logo{font-size:18px;line-height:1}.logo span{font-size:8px}
+  .mobile-menu-btn{display:grid;place-items:center;margin-left:auto;width:44px;height:44px;border:0;border-radius:12px;background:rgba(245,184,46,.14);color:#f5b82e;font-size:24px;cursor:pointer;z-index:10002}
+  .nav-links{position:fixed;top:0;right:-290px;width:285px;height:100vh;background:linear-gradient(180deg,#071a35,#0b4f91);display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:82px 18px 24px;box-shadow:-12px 0 35px rgba(0,0,0,.3);transition:right .28s ease;z-index:10001;overflow-y:auto}
+  .nav-links.open{right:0}
+  .nav-links button,.nav-links a{font-size:15px;padding:14px 15px;text-align:left;border-radius:12px}
+  .portal-links{display:flex;flex-direction:column;gap:8px;margin:6px 0 0;padding:14px 0 0;border-left:0;border-top:1px solid rgba(255,255,255,.15)}
+  .portal-links a{font-size:14px;padding:13px 15px}
+  .mobile-menu-overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:10000}
+  .page-view{padding-top:64px}
+}
+@media(max-width:520px){.page-view{padding-top:64px}.video-hero{height:calc(100vh - 64px);min-height:520px}.hero-content h1{font-size:31px}}
+
 </style>
 
 <!-- Firebase Compat Libraries (Simple & Works Everywhere) -->
@@ -151,23 +172,25 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
             <a href="admin.html">Admin Portal</a>
         </div>
     </div>
+<button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
 </nav>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 
 <div id="view-home" class="page-view active">
     <div class="video-hero" id="heroSlider">
         <div class="hero-slider" aria-label="Jakhar Tour Travels travel and vehicle gallery">
-            <div class="hero-slide active"><img src="https://viajaya.pt/resources/fileuploads/pacotes/14086/india-encantada-com-goa-e-bombaim-saidas-as-2-4-e-6-feiras-104_3.jpg" alt="Hawa Mahal Jaipur and busy Indian road" fetchpriority="high"></div>
-            <div class="hero-slide"><img src="https://wanderon-images.gumlet.io/gallery/new/2025/02/17/how-to-reach-arjun-gufa.jpg?auto=compress%2Cformat&w=768" alt="Scenic Manali mountain road"></div>
-            <div class="hero-slide"><img src="https://tripcabinet.com/assets/upload/blog/cordelia-cruise-mumbai-to-goa-price-3.jpeg" alt="Goa coastal road and palm trees"></div>
-            <div class="hero-slide"><img src="https://www.oneclickholidays.in/assets/images/kerala/kr-3.jpg" alt="Kerala backwater road at sunset"></div>
-            <div class="hero-slide"><img src="https://res.cloudinary.com/dyiffrkzh/image/upload/c_fill%2Cf_auto%2Cfl_progressive.strip_profile%2Cg_center%2Ch_400%2Cq_auto%2Cw_700/v1717825360/bbj/tzoyvlbjbtpdzagpbsw3.jpg" alt="Scenic Indian mountain highway"></div>
-            <div class="hero-slide"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c8/Taj_Mahal_in_March_2004.jpg" alt="Taj Mahal Agra"></div>
-            <div class="hero-slide"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/City_Palace%2C_Udaipur.jpg" alt="Udaipur City Palace"></div>
-            <div class="hero-slide"><img src="https://media.mahindrafirstchoice.com/live_web_images/usedcarsimg/mfc/4264/538234/dashboard-20221022132900.jpeg" alt="Maruti Swift clean interior"></div>
-            <div class="hero-slide"><img src="https://img.gaadicdn.com/images/carinteriorimages/930x620/Maruti/Dzire/11387/1751526834121/dashboard-59.jpg" alt="Maruti Dzire clean interior"></div>
-            <div class="hero-slide"><img src="https://cdn-s3.autocarindia.com/legacy/cdni/ExtraImages/20161005111403_DSP_9304.jpg" alt="Toyota Etios interior"></div>
-            <div class="hero-slide"><img src="https://3.bp.blogspot.com/-pPBsiNIqfmw/T5ZpjSta7MI/AAAAAAAAAWM/2wT3BmlTqf0/s1600/2012-Maruti-Suzuki-Ertiga-4.jpg" alt="Maruti Ertiga interior"></div>
-            <div class="hero-slide"><img src="https://img.autocarindia.com/ExtraImages/20170706084506__DSC2867.jpg?q=75&w=728" alt="Toyota Innova Crysta interior"></div>
+            <div class="hero-slide active"><img src="https://viajaya.pt/resources/fileuploads/pacotes/14086/india-encantada-com-goa-e-bombaim-saidas-as-2-4-e-6-feiras-104_3.jpg" alt="Hawa Mahal Jaipur and busy Indian road" fetchpriority="high" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://wanderon-images.gumlet.io/gallery/new/2025/02/17/how-to-reach-arjun-gufa.jpg?auto=compress%2Cformat&w=768" alt="Scenic Manali mountain road" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://tripcabinet.com/assets/upload/blog/cordelia-cruise-mumbai-to-goa-price-3.jpeg" alt="Goa coastal road and palm trees" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://www.oneclickholidays.in/assets/images/kerala/kr-3.jpg" alt="Kerala backwater road at sunset" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://res.cloudinary.com/dyiffrkzh/image/upload/c_fill%2Cf_auto%2Cfl_progressive.strip_profile%2Cg_center%2Ch_400%2Cq_auto%2Cw_700/v1717825360/bbj/tzoyvlbjbtpdzagpbsw3.jpg" alt="Scenic Indian mountain highway" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://upload.wikimedia.org/wikipedia/commons/c/c8/Taj_Mahal_in_March_2004.jpg" alt="Taj Mahal Agra" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://upload.wikimedia.org/wikipedia/commons/6/6e/City_Palace%2C_Udaipur.jpg" alt="Udaipur City Palace" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://media.mahindrafirstchoice.com/live_web_images/usedcarsimg/mfc/4264/538234/dashboard-20221022132900.jpeg" alt="Maruti Swift clean interior" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://img.gaadicdn.com/images/carinteriorimages/930x620/Maruti/Dzire/11387/1751526834121/dashboard-59.jpg" alt="Maruti Dzire clean interior" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://cdn-s3.autocarindia.com/legacy/cdni/ExtraImages/20161005111403_DSP_9304.jpg" alt="Toyota Etios interior" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://3.bp.blogspot.com/-pPBsiNIqfmw/T5ZpjSta7MI/AAAAAAAAAWM/2wT3BmlTqf0/s1600/2012-Maruti-Suzuki-Ertiga-4.jpg" alt="Maruti Ertiga interior" loading="lazy" decoding="async"></div>
+            <div class="hero-slide"><img data-src="https://img.autocarindia.com/ExtraImages/20170706084506__DSC2867.jpg?q=75&w=728" alt="Toyota Innova Crysta interior" loading="lazy" decoding="async"></div>
         </div>
         <div class="overlay"></div>
         <div class="hero-content">
@@ -297,24 +320,24 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
   ];
 
   const destinations = [
-      {name:"Taj Mahal, Agra", img:"https://upload.wikimedia.org/wikipedia/commons/c/c8/Taj_Mahal_in_March_2004.jpg"},
-      {name:"Hawa Mahal, Jaipur", img:"https://upload.wikimedia.org/wikipedia/commons/9/93/Hawa_Mahal_2011.jpg"},
-      {name:"Gateway of India, Mumbai", img:"https://upload.wikimedia.org/wikipedia/commons/3/3a/Mumbai_03-2016_30_Gateway_of_India.jpg"},
-      {name:"Kerala Backwaters", img:"https://upload.wikimedia.org/wikipedia/commons/e/e4/Kerala_backwaters.jpg"},
-      {name:"Goa Beaches", img:"https://upload.wikimedia.org/wikipedia/commons/a/a2/Colva_Beach_-_Goa_-_India.JPG"},
-      {name:"Manali, Himachal", img:"https://upload.wikimedia.org/wikipedia/commons/2/23/Manali_City.jpg"},
-      {name:"Varanasi Ghats", img:"https://upload.wikimedia.org/wikipedia/commons/3/36/Ghats_of_Varanasi.jpg"},
-      {name:"Udaipur City Palace", img:"https://upload.wikimedia.org/wikipedia/commons/6/6e/City_Palace%2C_Udaipur.jpg"},
-      {name:"Jaisalmer Fort", img:"https://upload.wikimedia.org/wikipedia/commons/5/52/Jaisalmer_Fort_-_Main_entrance.jpg"},
-      {name:"Darjeeling, WB", img:"https://upload.wikimedia.org/wikipedia/commons/8/89/Darjeeling_Tea_Plantation.jpg"},
-      {name:"Hampi, Karnataka", img:"https://upload.wikimedia.org/wikipedia/commons/1/15/Virupaksha_Temple_Hampi_Karnataka.jpg"},
-      {name:"Munnar, Kerala", img:"https://upload.wikimedia.org/wikipedia/commons/4/4b/Munnar_hillstation_kerala.jpg"},
-      {name:"Rishikesh, UK", img:"https://upload.wikimedia.org/wikipedia/commons/8/88/Lakshman_Jhula%2C_Rishikesh.jpg"},
-      {name:"Mysore Palace", img:"https://upload.wikimedia.org/wikipedia/commons/8/82/Mysore_Palace_Morning.jpg"},
-      {name:"Golden Temple", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Golden_Temple_India.jpg/800px-Golden_Temple_India.jpg"},
-      {name:"Ooty, Tamil Nadu", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Ooty_Town.jpg/800px-Ooty_Town.jpg"},
-      {name:"Shimla", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Shimla_in_Winters.jpg/800px-Shimla_in_Winters.jpg"},
-      {name:"Jodhpur", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Mehrangarh_Fort_Jodhpur.jpg/800px-Mehrangarh_Fort_Jodhpur.jpg"}
+      {name:"Taj Mahal, Agra", img:"https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=700&q=65"},
+      {name:"Hawa Mahal, Jaipur", img:"https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=700&q=65"},
+      {name:"Gateway of India, Mumbai", img:"https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=700&q=65"},
+      {name:"Kerala Backwaters", img:"https://images.unsplash.com/photo-1609920658906-8223bd289001?auto=format&fit=crop&w=700&q=65"},
+      {name:"Goa Beaches", img:"https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=700&q=65"},
+      {name:"Manali, Himachal", img:"https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=700&q=65"},
+      {name:"Varanasi Ghats", img:"https://images.unsplash.com/photo-1532664189809-02133fee698d?auto=format&fit=crop&w=700&q=65"},
+      {name:"Udaipur City Palace", img:"https://images.unsplash.com/photo-1598091383021-15ddea10925d?auto=format&fit=crop&w=700&q=65"},
+      {name:"Jaisalmer Fort", img:"https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=700&q=65"},
+      {name:"Darjeeling, WB", img:"https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=700&q=65"},
+      {name:"Hampi, Karnataka", img:"https://images.unsplash.com/photo-1532664189809-02133fee698d?auto=format&fit=crop&w=700&q=65"},
+      {name:"Munnar, Kerala", img:"https://images.unsplash.com/photo-1609920658906-8223bd289001?auto=format&fit=crop&w=700&q=65"},
+      {name:"Rishikesh, UK", img:"https://images.unsplash.com/photo-1595815771614-ade9d652a65d?auto=format&fit=crop&w=700&q=65"},
+      {name:"Mysore Palace", img:"https://images.unsplash.com/photo-1590050752117-23a9d7fc2c4d?auto=format&fit=crop&w=700&q=65"},
+      {name:"Golden Temple", img:"https://images.unsplash.com/photo-1514222134-b57cbb8ce073?auto=format&fit=crop&w=700&q=65"},
+      {name:"Ooty, Tamil Nadu", img:"https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=700&q=65"},
+      {name:"Shimla", img:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=700&q=65"},
+      {name:"Jodhpur", img:"https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?auto=format&fit=crop&w=700&q=65"},
   ];
 
   // HERO IMAGE SLIDER
@@ -344,8 +367,24 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
     heroDots.appendChild(dot);
   });
   const heroDotEls = [...document.querySelectorAll('.hero-dot')];
+  function loadHeroImage(index) {
+    const slide = heroSlides[(index + heroSlides.length) % heroSlides.length];
+    if (!slide) return;
+    const img = slide.querySelector('img[data-src]');
+    if (img && !img.src) {
+      img.src = img.dataset.src;
+      img.removeAttribute('data-src');
+    }
+  }
+  // Only the first hero image loads immediately; the next slide is prepared just in time.
+  loadHeroImage(0);
+  loadHeroImage(1);
+  loadHeroImage(2);
+
   function showHero(i, restart = false) {
     heroIndex = (i + heroSlides.length) % heroSlides.length;
+    loadHeroImage(heroIndex);
+    loadHeroImage(heroIndex + 1);
     heroSlides.forEach((slide, n) => slide.classList.toggle('active', n === heroIndex));
     heroDotEls.forEach((dot, n) => dot.classList.toggle('active', n === heroIndex));
     heroCaption.textContent = heroCaptions[heroIndex];
@@ -353,7 +392,7 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
   }
   function startHero() {
     clearInterval(heroTimer);
-    heroTimer = setInterval(() => showHero(heroIndex + 1), 5000);
+    heroTimer = setInterval(() => showHero(heroIndex + 1), 2000);
   }
   document.getElementById('heroPrev').onclick = () => showHero(heroIndex - 1, true);
   document.getElementById('heroNext').onclick = () => showHero(heroIndex + 1, true);
@@ -362,10 +401,10 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
   heroSlider.addEventListener('mouseleave', startHero);
   startHero();
 
-  // RENDER PLACES GRID
-  document.getElementById('destGrid').innerHTML = destinations.map(d => `
+  // RENDER PLACES GRID — one reliable image host + small 700px images. First 4 are eager, rest lazy.
+  document.getElementById('destGrid').innerHTML = destinations.map((d,i) => `
       <div class="dest-card" onclick="switchView('book'); document.getElementById('drop').value='${d.name}';">
-          <img src="${d.img}">
+          <img src="${d.img}" loading="${i<4?'eager':'lazy'}" decoding="async" fetchpriority="${i<2?'high':'low'}" alt="${d.name}" onload="this.classList.add('loaded')" onerror="this.classList.add('failed')">
           <div class="dest-info"><h3>${d.name}</h3></div>
       </div>
   `).join("");
@@ -378,6 +417,16 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
       window.scrollTo(0,0);
       if(id === 'book') setTimeout(() => map.invalidateSize(), 100);
   }
+
+  // MOBILE MENU
+  const mobileMenuBtn=document.getElementById('mobileMenuBtn');
+  const mobileNav=document.querySelector('.nav-links');
+  const mobileOverlay=document.getElementById('mobileMenuOverlay');
+  function closeMobileMenu(){mobileNav.classList.remove('open');mobileOverlay.classList.remove('show');mobileMenuBtn.setAttribute('aria-expanded','false');mobileMenuBtn.textContent='☰';}
+  function toggleMobileMenu(){const open=mobileNav.classList.toggle('open');mobileOverlay.classList.toggle('show',open);mobileMenuBtn.setAttribute('aria-expanded',open?'true':'false');mobileMenuBtn.textContent=open?'✕':'☰';}
+  mobileMenuBtn.addEventListener('click',toggleMobileMenu);
+  mobileOverlay.addEventListener('click',closeMobileMenu);
+  mobileNav.querySelectorAll('button,a').forEach(el=>el.addEventListener('click',closeMobileMenu));
 
   function setupSug(id, sugId, isPick) {
       const input = document.getElementById(id), box = document.getElementById(sugId);
