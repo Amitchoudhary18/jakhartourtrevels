@@ -25,15 +25,25 @@ nav { background: rgba(7, 26, 53, 0.95); backdrop-filter: blur(10px); padding: 1
 .page-view { display: none; padding-top: 76px; min-height: 100vh; animation: fadeUp 0.5s; }
 .page-view.active { display: block; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.video-hero { position: relative; height: 95vh; width: 100%; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; background: #071a35; }
-.video-hero video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 100%; min-height: 100%; object-fit: cover; z-index: 1; opacity: 0.8; }
-.video-hero .overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(7,26,53,0.8), rgba(7,26,53,0.4), rgba(7,26,53,0.9)); z-index: 2; }
-.hero-content { color: #fff; max-width: 900px; padding: 20px; z-index: 3; }
-.hero-content h1 { font-size: 60px; font-weight: 800; margin: 0 0 20px; }
+.video-hero { position: relative; height: 95vh; min-height: 620px; width: 100%; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; background: #111; }
+.hero-slider { position: absolute; inset: 0; z-index: 1; overflow: hidden; background: #111; }
+.hero-slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transform: scale(1.06); transition: opacity 1.2s ease, transform 7s ease; }
+.hero-slide.active { opacity: 1; visibility: visible; transform: scale(1); }
+.hero-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.video-hero .overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.70), rgba(0,0,0,.30) 55%, rgba(0,0,0,.48)), linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.58)); z-index: 2; }
+.hero-content { color: #fff; max-width: 900px; padding: 20px; z-index: 3; text-shadow: 0 3px 18px rgba(0,0,0,.45); }
+.hero-content h1 { font-size: 60px; font-weight: 800; margin: 0 0 20px; line-height: 1.08; }
 .hero-content h1 span { color: #f5b82e; }
 .hero-content p { font-size: 22px; margin-bottom: 40px; }
-.btn-large { background: linear-gradient(45deg, #f5b82e, #ffc947); color: #071a35; font-size: 18px; font-weight: 800; padding: 18px 45px; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; }
+.btn-large { background: linear-gradient(45deg, #f5b82e, #ffc947); color: #071a35; font-size: 18px; font-weight: 800; padding: 18px 45px; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; box-shadow: 0 12px 30px rgba(0,0,0,.25); }
 .btn-large:hover { transform: scale(1.05); }
+.hero-caption { position:absolute; left:28px; bottom:28px; z-index:4; color:#fff; text-align:left; background:rgba(0,0,0,.28); backdrop-filter:blur(8px); padding:10px 15px; border-radius:14px; font-size:13px; letter-spacing:.3px; }
+.hero-controls { position:absolute; right:28px; bottom:28px; z-index:4; display:flex; gap:9px; }
+.hero-arrow { width:42px; height:42px; border:1px solid rgba(255,255,255,.45); background:rgba(0,0,0,.28); color:#fff; border-radius:50%; cursor:pointer; backdrop-filter:blur(8px); transition:.25s; }
+.hero-arrow:hover { background:rgba(245,184,46,.9); color:#071a35; transform:scale(1.08); }
+.hero-dots { position:absolute; left:50%; bottom:30px; transform:translateX(-50%); z-index:4; display:flex; gap:7px; }
+.hero-dot { width:8px; height:8px; border:0; border-radius:50%; background:rgba(255,255,255,.55); padding:0; cursor:pointer; transition:.3s; }
+.hero-dot.active { width:24px; border-radius:8px; background:#f5b82e; }
 
 /* DESTINATIONS GRID */
 .destinations-sec { padding: 80px 20px; max-width: 1300px; margin: auto; text-align: center; }
@@ -106,6 +116,18 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
   .footer-grid{grid-template-columns:1fr!important}.site-footer .footer-inner{padding:32px 16px 18px}.footer-brand h2{font-size:21px}
 }
 
+
+@media (max-width: 768px) {
+  .video-hero { height: 78vh; min-height: 560px; }
+  .hero-content { padding: 18px; max-width: 100%; }
+  .hero-content h1 { font-size: clamp(36px, 10vw, 52px); margin-bottom: 14px; }
+  .hero-content p { font-size: 16px; margin-bottom: 26px; }
+  .btn-large { font-size: 16px; padding: 15px 28px; }
+  .hero-caption { left: 14px; bottom: 18px; right: 120px; font-size: 11px; padding: 8px 10px; }
+  .hero-controls { right: 14px; bottom: 17px; }
+  .hero-arrow { width: 36px; height: 36px; }
+  .hero-dots { bottom: 70px; }
+}
 </style>
 
 <!-- Firebase Compat Libraries (Simple & Works Everywhere) -->
@@ -132,14 +154,33 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
 </nav>
 
 <div id="view-home" class="page-view active">
-    <div class="video-hero">
-        <video autoplay muted loop playsinline><source src="https://cdn.pixabay.com/video/2019/10/14/27855-366060195_large.mp4" type="video/mp4"></video>
+    <div class="video-hero" id="heroSlider">
+        <div class="hero-slider" aria-label="Jakhar Tour Travels travel and vehicle gallery">
+            <div class="hero-slide active"><img src="https://viajaya.pt/resources/fileuploads/pacotes/14086/india-encantada-com-goa-e-bombaim-saidas-as-2-4-e-6-feiras-104_3.jpg" alt="Hawa Mahal Jaipur and busy Indian road" fetchpriority="high"></div>
+            <div class="hero-slide"><img src="https://wanderon-images.gumlet.io/gallery/new/2025/02/17/how-to-reach-arjun-gufa.jpg?auto=compress%2Cformat&w=768" alt="Scenic Manali mountain road"></div>
+            <div class="hero-slide"><img src="https://tripcabinet.com/assets/upload/blog/cordelia-cruise-mumbai-to-goa-price-3.jpeg" alt="Goa coastal road and palm trees"></div>
+            <div class="hero-slide"><img src="https://www.oneclickholidays.in/assets/images/kerala/kr-3.jpg" alt="Kerala backwater road at sunset"></div>
+            <div class="hero-slide"><img src="https://res.cloudinary.com/dyiffrkzh/image/upload/c_fill%2Cf_auto%2Cfl_progressive.strip_profile%2Cg_center%2Ch_400%2Cq_auto%2Cw_700/v1717825360/bbj/tzoyvlbjbtpdzagpbsw3.jpg" alt="Scenic Indian mountain highway"></div>
+            <div class="hero-slide"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c8/Taj_Mahal_in_March_2004.jpg" alt="Taj Mahal Agra"></div>
+            <div class="hero-slide"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/City_Palace%2C_Udaipur.jpg" alt="Udaipur City Palace"></div>
+            <div class="hero-slide"><img src="https://media.mahindrafirstchoice.com/live_web_images/usedcarsimg/mfc/4264/538234/dashboard-20221022132900.jpeg" alt="Maruti Swift clean interior"></div>
+            <div class="hero-slide"><img src="https://img.gaadicdn.com/images/carinteriorimages/930x620/Maruti/Dzire/11387/1751526834121/dashboard-59.jpg" alt="Maruti Dzire clean interior"></div>
+            <div class="hero-slide"><img src="https://cdn-s3.autocarindia.com/legacy/cdni/ExtraImages/20161005111403_DSP_9304.jpg" alt="Toyota Etios interior"></div>
+            <div class="hero-slide"><img src="https://3.bp.blogspot.com/-pPBsiNIqfmw/T5ZpjSta7MI/AAAAAAAAAWM/2wT3BmlTqf0/s1600/2012-Maruti-Suzuki-Ertiga-4.jpg" alt="Maruti Ertiga interior"></div>
+            <div class="hero-slide"><img src="https://img.autocarindia.com/ExtraImages/20170706084506__DSC2867.jpg?q=75&w=728" alt="Toyota Innova Crysta interior"></div>
+        </div>
         <div class="overlay"></div>
         <div class="hero-content">
             <h1>Your Journey, <br><span>Our Responsibility</span></h1>
             <p>Premium, safe, and comfortable cab rides in India.</p>
             <button class="btn-large" onclick="switchView('book')">Book Your Ride <i class="fa-solid fa-arrow-right"></i></button>
         </div>
+        <div class="hero-caption" id="heroCaption">Explore India • Comfortable rides</div>
+        <div class="hero-controls">
+            <button class="hero-arrow" id="heroPrev" aria-label="Previous slide"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="hero-arrow" id="heroNext" aria-label="Next slide"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="hero-dots" id="heroDots" aria-label="Slider navigation"></div>
     </div>
 
     <div class="destinations-sec">
@@ -275,6 +316,51 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
       {name:"Shimla", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Shimla_in_Winters.jpg/800px-Shimla_in_Winters.jpg"},
       {name:"Jodhpur", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Mehrangarh_Fort_Jodhpur.jpg/800px-Mehrangarh_Fort_Jodhpur.jpg"}
   ];
+
+  // HERO IMAGE SLIDER
+  const heroSlides = [...document.querySelectorAll('.hero-slide')];
+  const heroDots = document.getElementById('heroDots');
+  const heroCaption = document.getElementById('heroCaption');
+  const heroCaptions = [
+    'Hawa Mahal, Jaipur • Heritage & city life',
+    'Manali • Scenic Himalayan road journey',
+    'Goa • Coastal roads & tropical views',
+    'Kerala • Peaceful backwater roads',
+    'India • Beautiful mountain highway',
+    'Agra • Taj Mahal',
+    'Udaipur • City Palace',
+    'Maruti Swift • Clean & comfortable interior',
+    'Maruti Dzire • Comfortable sedan interior',
+    'Toyota Etios • Spacious practical cabin',
+    'Maruti Ertiga • Family-friendly interior',
+    'Toyota Innova • Premium travel cabin'
+  ];
+  let heroIndex = 0, heroTimer;
+  heroSlides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'hero-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.onclick = () => showHero(i, true);
+    heroDots.appendChild(dot);
+  });
+  const heroDotEls = [...document.querySelectorAll('.hero-dot')];
+  function showHero(i, restart = false) {
+    heroIndex = (i + heroSlides.length) % heroSlides.length;
+    heroSlides.forEach((slide, n) => slide.classList.toggle('active', n === heroIndex));
+    heroDotEls.forEach((dot, n) => dot.classList.toggle('active', n === heroIndex));
+    heroCaption.textContent = heroCaptions[heroIndex];
+    if (restart) startHero();
+  }
+  function startHero() {
+    clearInterval(heroTimer);
+    heroTimer = setInterval(() => showHero(heroIndex + 1), 5000);
+  }
+  document.getElementById('heroPrev').onclick = () => showHero(heroIndex - 1, true);
+  document.getElementById('heroNext').onclick = () => showHero(heroIndex + 1, true);
+  const heroSlider = document.getElementById('heroSlider');
+  heroSlider.addEventListener('mouseenter', () => clearInterval(heroTimer));
+  heroSlider.addEventListener('mouseleave', startHero);
+  startHero();
 
   // RENDER PLACES GRID
   document.getElementById('destGrid').innerHTML = destinations.map(d => `
