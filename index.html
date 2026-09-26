@@ -78,6 +78,34 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
 .footer-social{display:flex;gap:10px;margin-top:16px}.footer-social a{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12);color:#fff;text-decoration:none;transition:.25s}.footer-social a:hover{background:#f5b82e;color:#071a35;transform:translateY(-3px)}
 .footer-bottom{margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,.15);display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;color:rgba(255,255,255,.65);font-size:12px}
 @media(max-width:800px){.footer-grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.footer-grid{grid-template-columns:1fr}.footer-inner{padding:38px 20px 18px}}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 900px){
+  nav{padding:10px 16px;flex-wrap:wrap;gap:8px;}
+  .logo{font-size:20px;gap:7px}.logo span{font-size:10px;letter-spacing:1px}
+  .nav-links{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;order:3}
+  .nav-links button,.nav-links a{font-size:12px;padding:9px 5px;text-align:center}
+  .portal-links{display:contents;margin:0;padding:0;border:0}
+  .portal-links a{font-size:12px;padding:9px 5px}
+  .page-view{padding-top:125px}
+  .hero-content h1{font-size:42px;line-height:1.12}.hero-content p{font-size:17px;margin-bottom:25px}
+  .video-hero{height:78vh;min-height:560px}
+  .destinations-sec{padding:50px 14px}.grid-container{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dest-card{height:230px;border-radius:14px}
+  .book-container{margin:35px auto;padding:0 12px}.panel{padding:20px;border-radius:18px}.formgrid{grid-template-columns:1fr;gap:16px}
+  .triprow{gap:10px}.trip{padding:13px 8px;font-size:13px}
+  #map{height:330px;border-radius:14px}.cars{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.car{border-radius:14px}.car img{height:95px}
+  .modal-content{padding:25px 18px;width:94%}
+}
+@media (max-width: 520px){
+  nav{padding:9px 10px}.nav-links{grid-template-columns:repeat(2,1fr)}
+  .portal-links a{font-size:11px}.page-view{padding-top:165px}
+  .hero-content{padding:15px}.hero-content h1{font-size:31px}.hero-content p{font-size:14px}.btn-large{font-size:15px;padding:14px 25px}
+  .grid-container{grid-template-columns:1fr 1fr}.dest-card{height:190px}.dest-info{left:12px;bottom:12px}.dest-info h3{font-size:15px}.dest-info p{font-size:11px}
+  .panel{padding:15px}.formgrid{gap:13px}input,select{padding:13px 14px;font-size:14px}.btn{padding:14px 18px;font-size:14px}
+  #map{height:280px}.cars{grid-template-columns:1fr 1fr}.car img{height:80px}
+  .footer-grid{grid-template-columns:1fr!important}.site-footer .footer-inner{padding:32px 16px 18px}.footer-brand h2{font-size:21px}
+}
+
 </style>
 
 <!-- Firebase Compat Libraries (Simple & Works Everywhere) -->
@@ -191,10 +219,10 @@ input, select { width: 100%; padding: 16px 20px; border: 2px solid #e2eaf2; bord
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-grid">
-      <div class="footer-brand"><h2><i class="fa-solid fa-car-side"></i> Jakhar Tour Travels</h2><p>Comfortable, reliable and hassle-free cab booking for local travel, outstation trips and memorable journeys across India.</p><div class="footer-social"><a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a><a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a><a href="#" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a></div></div>
+      <div class="footer-brand"><h2><i class="fa-solid fa-car-side"></i> Jakhar Tour Travels</h2><p>Comfortable, reliable and hassle-free cab booking for local travel, outstation trips and memorable journeys across India.</p><div class="footer-social"><a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a><a href="https://www.instagram.com/amitxchoudhary_n?stkn=N3BhNGFuNW96aWkz" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a><a href="https://wa.me/918742896068" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a></div></div>
       <div class="footer-col"><h3>Quick Links</h3><div class="footer-links"><a href="#">Home</a><a href="#bookingSection">Book a Cab</a><a href="#trackingSection">Track Booking</a><a href="#destinations">Destinations</a></div></div>
       <div class="footer-col"><h3>Our Services</h3><div class="footer-links"><a href="#bookingSection">Local Cab</a><a href="#bookingSection">Outstation Cab</a><a href="#bookingSection">Airport Transfer</a><a href="#bookingSection">Tour &amp; Travel</a></div></div>
-      <div class="footer-col"><h3>Contact Us</h3><div class="footer-contact"><div><i class="fa-solid fa-phone"></i> Call / WhatsApp for booking</div><div><i class="fa-solid fa-location-dot"></i> Jaipur, Rajasthan, India</div><div><i class="fa-solid fa-clock"></i> Support available for your journey</div></div></div>
+      <div class="footer-col"><h3>Contact Us</h3><div class="footer-contact"><div><i class="fa-solid fa-phone"></i> <a href="tel:+917737719144" style="color:inherit;text-decoration:none">+91 77377 19144</a></div><div><i class="fa-brands fa-whatsapp"></i> <a href="https://wa.me/918742896068" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">WhatsApp: +91 87428 96068</a></div><div><i class="fa-solid fa-location-dot"></i> Jaipur, Rajasthan, India</div><div><i class="fa-solid fa-clock"></i> Support available for your journey</div></div></div>
     </div>
     <div class="footer-bottom"><span>© 2026 Jakhar Tour Travels. All Rights Reserved.</span><span>Safe • Comfortable • Reliable Travel</span></div>
   </div>
