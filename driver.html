@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Driver Portal | Jakhar Travels</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"><script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script><style>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');*{box-sizing:border-box;font-family:Poppins,sans-serif}body{margin:0;background:linear-gradient(135deg,#eafaf5,#eef6ff,#fff3e8);color:#142033;padding:14px}nav{max-width:1100px;margin:auto;background:linear-gradient(135deg,#075e54,#0f8a62,#0b74c9);color:#fff;padding:14px 18px;border-radius:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 10px 28px #0f8a6240}nav a{color:#fff;text-decoration:none;background:#ffffff22;padding:9px 12px;border-radius:9px}.wrap{max-width:850px;margin:20px auto}.panel{background:#fffffff2;border:1px solid #0f8a6218;border-radius:20px;padding:25px;box-shadow:0 16px 40px #1e46301a;margin-bottom:18px}.tabs{display:flex;gap:8px;margin-bottom:18px}.tabs button{flex:1}.form{display:grid;grid-template-columns:1fr 1fr;gap:15px}.full{grid-column:1/-1}label{display:block;font-size:13px;font-weight:700;color:#555;margin-bottom:6px}input,select{width:100%;padding:13px;border:1px solid #ccd6df;border-radius:10px;font-size:15px}button{width:100%;padding:13px;border:0;border-radius:10px;background:linear-gradient(135deg,#0f8a62,#0b74c9);color:#fff;font-weight:700;cursor:pointer;margin-top:10px}.tabs button{background:#eef2f4;color:#333}.tabs button.active{background:#0f8a62;color:#fff}.duty{background:#f8fafb;border:2px solid #e2e8f0;border-radius:15px;padding:20px;text-align:center}.duty-on{color:#27ae60}.duty-off{color:#e74c3c}.duty-btns{display:flex;gap:10px}.job{background:#fff;border:1px solid #e0e0e0;border-left:5px solid #0f8a62;border-radius:14px;padding:18px;margin:12px 0}.job-actions{display:flex;gap:8px}.job-actions button{flex:1}.wa{background:#25d366}.popup{position:fixed;right:18px;bottom:18px;background:#071a35;color:#fff;padding:14px 18px;border-radius:12px;display:none;z-index:99}.popup.show{display:block}@media(max-width:650px){body{padding:8px}nav{padding:12px}.form{grid-template-columns:1fr}.full{grid-column:auto}.panel{padding:16px}.duty-btns,.job-actions{flex-direction:column}.duty-btns button,.job-actions button{width:100%}nav a{font-size:12px}.wrap{margin:12px auto}}</style></head><body><nav><b>🚕 Jakhar Travels — Driver Portal</b><a href="index.html">Customer Site</a></nav><main class="wrap"><div id="auth" class="panel"><div class="tabs"><button id="loginTab" class="active" onclick="showTab('login')">Driver Login</button><button id="regTab" onclick="showTab('register')">New Driver Registration</button></div><div id="loginForm"><div class="form"><div><label>Company Driver ID</label><input id="loginId" placeholder="JTT-D-1001" autocapitalize="characters"></div><div><label>Password</label><input id="loginPassword" type="password" placeholder="Your password"></div></div><button onclick="loginDriver()">🔐 Login</button><p style="color:#667085;font-size:13px">Only admin-approved driver IDs can login.</p></div><div id="registerForm" style="display:none"><div class="form"><div><label>Full Name</label><input id="regName"></div><div><label>Mobile</label><input id="regMobile" maxlength="10" inputmode="numeric"></div><div><label>Vehicle Number</label><input id="regVehNo" placeholder="RJ14AB1234"></div><div><label>Vehicle Type</label><select id="regVehType"><option>Maruti Swift</option><option>Maruti Dzire</option><option>Toyota Etios</option><option>Maruti Ertiga</option><option>Toyota Innova</option></select></div><div class="full"><label>Create Password</label><input id="regPassword" type="password" minlength="6" placeholder="Minimum 6 characters"></div></div><button onclick="registerDriver()">📨 Submit Registration</button><p style="color:#667085;font-size:13px">Registration admin ke approval ke liye jayegi. Company aapko Driver ID approve/assign karegi.</p></div></div><div id="dashboard" style="display:none"><div class="panel"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><h2 id="drvName">Driver</h2><button style="width:auto;background:#e74c3c" onclick="logout()">Logout</button></div><div class="duty"><h2 id="dutyText">🔴 OFF DUTY</h2><p>ON Duty karne par Admin ke live map par aapki location update hogi.</p><div class="duty-btns"><button onclick="setDuty(true)">🟢 Go ON Duty</button><button style="background:#e74c3c" onclick="setDuty(false)">🔴 Go OFF Duty</button></div><button style="background:#0b74c9" onclick="shareLocation()">📍 Update Live Location</button><div id="locStatus"></div></div></div><div class="panel"><h2>🔔 Available & My Jobs</h2><div id="jobList">Loading...</div></div></div></main><div id="popup" class="popup"></div><script>
+const firebaseConfig={apiKey:"AIzaSyBHqSJW6RJkKDrUtPfRmgqQMYei58wBSks",authDomain:"jakhar-tour-travels.firebaseapp.com",projectId:"jakhar-tour-travels",storageBucket:"jakhar-tour-travels.firebasestorage.app",messagingSenderId:"295813687761",appId:"1:295813687761:web:ff425781db24587a8298f0"};firebase.initializeApp(firebaseConfig);const db=firebase.firestore();let currentDriver=null,jobsUnsub=null,driverUnsub=null,watchId=null;
+function showTab(t){loginForm.style.display=t==='login'?'block':'none';registerForm.style.display=t==='register'?'block':'none';loginTab.classList.toggle('active',t==='login');regTab.classList.toggle('active',t==='register')}
+async function registerDriver(){let name=regName.value.trim(),mobile=regMobile.value.replace(/\D/g,''),vehicleNo=regVehNo.value.trim(),vehicleType=regVehType.value,password=regPassword.value;if(!name||mobile.length!==10||!vehicleNo||password.length<6)return alert('All details fill karein. Password minimum 6 characters.');try{let snap=await db.collection('drivers').orderBy('createdAt','desc').limit(1).get(),n=1001;if(!snap.empty){let last=snap.docs[0].data().id||'';let m=last.match(/(\d+)$/);if(m)n=+m[1]+1}let id='JTT-D-'+n;await db.collection('drivers').doc(id).set({id,name,mobile,vehicleNo,vehicleType,password,status:'Pending',approved:false,onDuty:false,lat:null,lng:null,lastLocationTime:'',createdAt:Date.now()});alert('Registration submitted. Company approval ke baad aapko Driver ID milegi. Request ID: '+id);showTab('login')}catch(e){console.error(e);alert('Registration failed. Firestore Rules check karein.')}}
+async function loginDriver(){let id=loginId.value.trim().toUpperCase(),password=loginPassword.value;try{let s=await db.collection('drivers').doc(id).get();if(!s.exists)return alert('Driver ID ya password galat hai.');let d=s.data();if(d.approved!==true&&d.status!=='Approved')return alert('Your driver account is waiting for company approval.');if(d.password!==password)return alert('Driver ID ya password galat hai.');currentDriver=d;auth.style.display='none';dashboard.style.display='block';drvName.textContent=d.name+' • '+d.id;updateDutyUI();subscribeDriver();loadJobs()}catch(e){console.error(e);alert('Login error. Firestore Rules check karein.')}}
+function subscribeDriver(){if(driverUnsub)driverUnsub();driverUnsub=db.collection('drivers').doc(currentDriver.id).onSnapshot(s=>{if(s.exists){currentDriver={...currentDriver,...s.data()};updateDutyUI()}})}
+function updateDutyUI(){dutyText.innerHTML=currentDriver?.onDuty?'🟢 ON DUTY • ACTIVE':'🔴 OFF DUTY'}
+function playDutySound(on){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(!C)return;
+    const ctx=new C(),osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.type='sine';osc.frequency.value=on?880:520;gain.gain.value=0.0001;
+    osc.connect(gain);gain.connect(ctx.destination);const now=ctx.currentTime;
+    gain.gain.exponentialRampToValueAtTime(0.18,now+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,now+0.35);
+    osc.start(now);osc.stop(now+0.38);
+  }catch(e){console.warn('Sound unavailable',e)}
+}
+async function setDuty(on){
+  if(!currentDriver)return;
+  playDutySound(on);
+  try{
+    await db.collection('drivers').doc(currentDriver.id).set({onDuty:on},{merge:true});
+    currentDriver.onDuty=on;updateDutyUI();
+    if(on){showPopup('🟢 DUTY ON — Live location start ho rahi hai');startLiveLocation();}
+    else{stopLiveLocation();locStatus.textContent='🔴 Live location stopped.';showPopup('🔴 DUTY OFF');}
+  }catch(e){
+    console.error('Duty update error:',e);
+    alert('Duty status update failed: '+(e.code||'')+' '+(e.message||''));
+  }
+}
+function startLiveLocation(){
+  if(!currentDriver?.onDuty)return;
+  if(!navigator.geolocation){locStatus.textContent='❌ Browser location support nahi karta.';return;}
+  stopLiveLocation();
+  locStatus.textContent='📍 Location permission check ho rahi hai...';
+  const pushLocation=async p=>{
+    const data={lat:p.coords.latitude,lng:p.coords.longitude,lastLocationTime:new Date().toLocaleString()};
+    try{
+      await db.collection('drivers').doc(currentDriver.id).set(data,{merge:true});
+      Object.assign(currentDriver,data);
+      locStatus.textContent='🟢 Location updated: '+data.lastLocationTime;
+    }catch(e){
+      console.error('Location Firestore error:',e);
+      locStatus.textContent='⚠️ Location save failed: '+(e.code||e.message||'');
+    }
+  };
+  navigator.geolocation.getCurrentPosition(pushLocation,e=>{
+    console.error('Initial location error:',e);
+    locStatus.textContent=e.code===1?'❌ Location permission denied. Browser location allow karein.':'⚠️ Location nahi mil rahi. GPS/location ON karein.';
+  },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  watchId=navigator.geolocation.watchPosition(pushLocation,e=>{
+    console.error('Live location error:',e);
+    if(e.code===1)locStatus.textContent='❌ Location permission denied. Browser mein Location Allow karein.';
+    else if(e.code===3)locStatus.textContent='⚠️ GPS timeout. Location/GPS ON rakhein.';
+  },{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+}
+function stopLiveLocation(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}}
+function shareLocation(){
+  if(!currentDriver?.onDuty)return alert('Pehle ON Duty karein.');
+  playDutySound(true);startLiveLocation();
+}
+function loadJobs(){
+  if(jobsUnsub)jobsUnsub();
+  jobsUnsub=db.collection('bookings').onSnapshot(s=>{
+    let jobs=[];s.forEach(x=>{let b=x.data();if(b.driverId===currentDriver.id)jobs.push(b)});
+    jobs.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));renderJobs(jobs);
+  },e=>jobList.innerHTML='<p style="color:red">Unable to load assigned bookings. Rules check karein.</p>')
+}
+function renderJobs(arr){
+  if(!arr.length){jobList.innerHTML='<p style="text-align:center;color:#667085;padding:25px">No trip assigned yet. Admin assignment ka wait karein.</p>';return}
+  jobList.innerHTML=arr.map(b=>`<div class="job"><div style="display:flex;justify-content:space-between;gap:8px"><h3 style="margin:0;color:#0f8a62">🚕 ${esc(b.id)}</h3><b>${esc(b.status)}</b></div><p><b>Customer:</b> ${esc(b.name)} (${esc(b.phone)})</p><p><b>Pickup / Drop:</b> ${esc(b.route)}</p><p><b>Date:</b> ${esc(b.date)} at ${esc(b.time)}</p><p><b>Car:</b> ${esc(b.driverVehicleType||b.car)} • <b>Vehicle No:</b> ${esc(b.driverVehicle||'-')}</p><div class="job-actions">${b.driverAccepted?'<button style="background:#27ae60" disabled>✅ Trip Accepted</button>':'<button onclick="acceptAssignedJob(\''+b.id+'\')">✅ Accept Assigned Trip</button>'}<button class="wa" onclick="sendWhatsApp(\''+b.id+'\')">💬 WhatsApp Customer</button></div></div>`).join('')
+}
+async function acceptAssignedJob(id){
+  if(!currentDriver.onDuty)return alert('Pehle ON Duty karein.');
+  try{const ref=db.collection('bookings').doc(id),s=await ref.get();if(!s.exists)return alert('Booking not found.');const b=s.data();if(b.driverId!==currentDriver.id)return alert('Ye trip aapko assign nahi hui hai.');await ref.update({driverAccepted:true,driverAcceptedAt:Date.now()});showPopup('✅ Assigned trip accepted.');}
+  catch(e){console.error(e);alert('Trip accept nahi hui: '+(e.code||'')+' '+(e.message||''));}
+}
+async function sendWhatsApp(id){let s=await db.collection('bookings').doc(id).get();if(!s.exists)return;let b=s.data(),num=('91'+String(b.phone).replace(/\D/g,'')).slice(-12),msg=`Jakhar Tour Travels - Trip Assigned\nBooking ID: ${b.id}\nCustomer: ${b.name}\nCustomer Mobile: ${b.phone}\nPickup/Drop: ${b.route}\nDate: ${b.date}\nTime: ${b.time}\nVehicle: ${b.driverVehicleType||b.car}\nVehicle No: ${b.driverVehicle||'-'}`;window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`,'_blank')}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function showPopup(t){popup.textContent=t;popup.classList.add('show');setTimeout(()=>popup.classList.remove('show'),3000)}function logout(){stopLiveLocation();if(jobsUnsub)jobsUnsub();if(driverUnsub)driverUnsub();currentDriver=null;dashboard.style.display='none';auth.style.display='block'}
+</script></body></html>
