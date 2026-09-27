@@ -6,7 +6,23 @@ function subscribeData(){if(bu)bu();if(du)du();bu=db.collection('bookings').onSn
 function renderAll(){totalB.textContent=bookings.length;penB.textContent=bookings.filter(x=>x.status==='Pending').length;conB.textContent=bookings.filter(x=>x.status==='Confirmed').length;canB.textContent=bookings.filter(x=>x.status==='Cancelled').length;onDutyD.textContent=drivers.filter(x=>x.onDuty).length;renderBookings();renderDrivers()}
 function renderBookings(){if(!bookings.length){adminTable.innerHTML='<tr><td colspan="7">No bookings.</td></tr>';return}adminTable.innerHTML=bookings.map(b=>{let opts='<option value="">-- No Driver --</option>'+drivers.filter(d=>d.approved===true||d.status==='Approved').map(d=>`<option value="${d.id}" ${b.driverId===d.id?'selected':''}>${esc(d.id)} - ${esc(d.name)} ${d.onDuty?'🟢':'🔴'}</option>`).join('');return `<tr><td><b>${esc(b.id)}</b><br>${esc(b.fare)}</td><td>${esc(b.name)}<br>${esc(b.phone)}</td><td>${esc(b.route)}<br>${esc(b.car)}</td><td>${esc(b.date)}<br>${esc(b.time)}</td><td><select id="s_${b.id}">${['Pending','Confirmed','Completed','Cancelled'].map(s=>`<option ${b.status===s?'selected':''}>${s}</option>`).join('')}</select></td><td><select id="d_${b.id}">${opts}</select></td><td class="actions"><button class="save" onclick="saveBooking('${b.id}')">Save</button>${b.status!=='Cancelled'?`<button class="cancel" onclick="quickCancel('${b.id}')">Cancel</button>`:''}</td></tr>`}).join('')}
 async function saveBooking(id){let b=bookings.find(x=>x.id===id),status=document.getElementById('s_'+id).value,driverId=document.getElementById('d_'+id).value,driver=drivers.find(d=>d.id===driverId);let data={status,driverId:driverId||'',driverName:driver?.name||'',driverMobile:driver?.mobile||'',driverVehicle:driver?.vehicleNo||''};try{await db.collection('bookings').doc(id).update(data);alert(status==='Confirmed'&&driver?'Booking confirmed and driver details sent to customer tracking.':'Booking updated.')}catch(e){alert('Update failed. Rules check karein.')}}async function quickCancel(id){if(!confirm('Cancel this booking?'))return;await db.collection('bookings').doc(id).update({status:'Cancelled'})}
-function renderDrivers(){markers.forEach(m=>adminMap.removeLayer(m));markers=[];let bounds=[];liveDriversTable.innerHTML=drivers.length?drivers.map(d=>{let badge=d.onDuty?'<span class="badge confirmed">🟢 ON DUTY</span>':'<span class="badge off">🔴 OFF DUTY</span>';let loc=d.lat!=null?`Lat ${(+d.lat).toFixed(4)}, Lng ${(+d.lng).toFixed(4)}<br><small>${esc(d.lastLocationTime||'')}</small>`:'No location';if(d.onDuty&&d.lat!=null&&d.lng!=null){let m=L.marker([d.lat,d.lng]).addTo(adminMap).bindPopup(`<b>${esc(d.name)}</b><br>${esc(d.id)}<br>${esc(d.mobile)}<br>🟢 ON DUTY`);markers.push(m);bounds.push([d.lat,d.lng])}return `<tr><td><b>${esc(d.id)}</b><br>${esc(d.name)}</td><td>${esc(d.mobile)}</td><td>${esc(d.vehicleType)}<br>${esc(d.vehicleNo)}</td><td>${badge}</td><td>${loc}</td></tr>`}).join(''):'<tr><td colspan="5">No drivers.</td></tr>';if(bounds.length)adminMap.fitBounds(bounds,{padding:[25,25]});driverManagementTable.innerHTML=drivers.length?drivers.map(d=>`<tr><td><b>${esc(d.id)}</b><br>${esc(d.name)}</td><td>${esc(d.mobile)}</td><td>${esc(d.vehicleType)}<br>${esc(d.vehicleNo)}</td><td>${d.approved===true||d.status==='Approved'?'<span class="badge confirmed">Approved</span>':'<span class="badge pending">Pending Approval</span>'}</td><td><code>${esc(d.password||'')}</code></td><td class="actions">${d.approved===true||d.status==='Approved'?'':'<button class="approve" onclick="approveDriver(\''+d.id+'\')">Approve</button>'}<button class="reset" onclick="resetPassword(\''+d.id+'\')">Reset Password</button><button class="danger" onclick="removeDriver(\''+d.id+'\')">Remove</button></td></tr>`).join(''):'<tr><td colspan="6">No driver accounts.</td></tr>'}
+function renderDrivers(){
+  markers.forEach(m=>adminMap.removeLayer(m));markers=[];let bounds=[];
+  liveDriversTable.innerHTML=drivers.length?drivers.map(d=>{
+    let badge=d.onDuty?'<span class="badge confirmed">🟢 ON DUTY</span>':'<span class="badge off">🔴 OFF DUTY</span>';
+    let hasLoc=d.lat!==null&&d.lat!==undefined&&d.lng!==null&&d.lng!==undefined&&isFinite(Number(d.lat))&&isFinite(Number(d.lng));
+    let lat=Number(d.lat),lng=Number(d.lng);
+    let mapLink=hasLoc?`<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener" style="color:#0b74c9;font-weight:700">📍 Open exact location</a>`:'';
+    let loc=hasLoc?`Lat ${lat.toFixed(6)}, Lng ${lng.toFixed(6)}<br><small>${esc(d.lastLocationTime||'')}</small><br>${mapLink}`:'No location yet';
+    if(hasLoc){
+      let m=L.marker([lat,lng]).addTo(adminMap).bindPopup(`<b>${esc(d.name)}</b><br>${esc(d.id)}<br>${esc(d.mobile)}<br>${d.onDuty?'🟢 ON DUTY':'🔴 OFF DUTY'}<br><a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener">Open exact location</a>`);
+      markers.push(m);bounds.push([lat,lng]);
+    }
+    return `<tr><td><b>${esc(d.id)}</b><br>${esc(d.name)}</td><td>${esc(d.mobile)}</td><td>${esc(d.vehicleType)}<br>${esc(d.vehicleNo)}</td><td>${badge}</td><td>${loc}</td></tr>`
+  }).join(''):'<tr><td colspan="5">No drivers.</td></tr>';
+  if(bounds.length)adminMap.fitBounds(bounds,{padding:[25,25],maxZoom:16});
+  driverManagementTable.innerHTML=drivers.length?drivers.map(d=>`<tr><td><b>${esc(d.id)}</b><br>${esc(d.name)}</td><td>${esc(d.mobile)}</td><td>${esc(d.vehicleType)}<br>${esc(d.vehicleNo)}</td><td>${d.approved===true||d.status==='Approved'?'<span class="badge confirmed">Approved</span>':'<span class="badge pending">Pending Approval</span>'}</td><td><code>${esc(d.password||'')}</code></td><td class="actions">${d.approved===true||d.status==='Approved'?'':'<button class="approve" onclick="approveDriver(\''+d.id+'\')">Approve</button>'}<button class="reset" onclick="resetPassword(\''+d.id+'\')">Reset Password</button><button class="danger" onclick="removeDriver(\''+d.id+'\')">Remove</button></td></tr>`).join(''):'<tr><td colspan="6">No driver accounts.</td></tr>'
+}
 async function approveDriver(id){
   try{
     await db.collection('drivers').doc(id).update({approved:true,status:'Approved',approvedAt:Date.now()});
@@ -18,14 +34,28 @@ async function resetPassword(id){
   if(!p)return;
   if(p.length<6)return alert('Minimum 6 characters.');
   try{
-    await db.collection('drivers').doc(id).update({password:p});
+    const direct=db.collection('drivers').doc(id);
+    const snap=await direct.get();
+    if(snap.exists){await direct.update({password:p});}
+    else{
+      const q=await db.collection('drivers').where('id','==',id).get();
+      if(q.empty)return alert('Driver record nahi mila: '+id);
+      const batch=db.batch();q.forEach(doc=>batch.update(doc.ref,{password:p}));await batch.commit();
+    }
     alert('✅ Password updated successfully.');
   }catch(e){console.error(e);alert('Password reset failed: '+(e.code||'')+' '+(e.message||''));}
 }
 async function removeDriver(id){
   if(!confirm('Remove driver '+id+'?'))return;
   try{
-    await db.collection('drivers').doc(id).delete();
+    const direct=db.collection('drivers').doc(id);
+    const snap=await direct.get();
+    if(snap.exists){await direct.delete();}
+    else{
+      const q=await db.collection('drivers').where('id','==',id).get();
+      if(q.empty)return alert('Driver record nahi mila: '+id);
+      const batch=db.batch();q.forEach(doc=>batch.delete(doc.ref));await batch.commit();
+    }
     alert('✅ Driver removed successfully.');
   }catch(e){console.error(e);alert('Driver remove failed: '+(e.code||'')+' '+(e.message||''));}
 }
