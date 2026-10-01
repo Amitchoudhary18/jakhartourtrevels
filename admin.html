@@ -27,7 +27,7 @@ table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #f
 th, td { padding: 15px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
 th { background: #071a35; color: #fff; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;}
 tr:hover { background: #f9fbfc; }
-select, button, input { padding: 10px; border-radius: 6px; border: 1px solid #ccc; outline: none;}
+select, button, input, textarea { padding: 10px; border-radius: 6px; border: 1px solid #ccc; outline: none; font-family: 'Poppins', sans-serif;}
 button { background: #0b74c9; color: #fff; border: none; cursor: pointer; font-weight: bold; transition: 0.3s;}
 button:hover { background: #085a9c; }
 .save-btn { background: #27ae60; color: #fff; padding: 8px 12px; width: 100%; margin-bottom: 5px;}
@@ -49,6 +49,9 @@ th{background:linear-gradient(135deg,#071a35,#0b74c9)}
 
 .driver-tools{margin-top:22px;padding:20px;border-radius:16px;background:linear-gradient(145deg,#f8fbff,#fff7ff);border:1px solid #e4e8f5}.driver-tools h3{margin-top:0}.driver-actions{display:flex;gap:8px;flex-wrap:wrap}.reset-btn{background:#7b2cbf!important}.delete-driver-btn{background:#e74c3c!important}.mini-btn{padding:8px 11px!important;font-size:12px!important;margin:0!important}.pin-note{font-size:12px;color:#6b7280;margin-top:8px}
 
+.formgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.formgrid label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 5px; }
+
 /* ===== MOBILE RESPONSIVE ===== */
 html,body{max-width:100%;overflow-x:hidden}
 @media (max-width: 768px){
@@ -62,20 +65,21 @@ html,body{max-width:100%;overflow-x:hidden}
   .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px}
   .stat-card{padding:13px 7px;font-size:12px;border-radius:10px}
   .stat-card b{font-size:23px}
-  .tabs{gap:7px;margin-bottom:12px}
-  .tab-btn{padding:11px 7px;font-size:12px;line-height:1.35}
+  .tabs{gap:7px;margin-bottom:12px; flex-wrap:wrap;}
+  .tab-btn{padding:11px 7px;font-size:12px;line-height:1.35; flex: 1 1 30%;}
   #tabBookings>div:first-child,#tabDrivers>div:first-child{gap:8px;flex-wrap:wrap}
   #tabBookings h3,#tabDrivers h3{font-size:17px}
   #adminMap{height:300px;border-radius:10px}
   table{min-width:760px}
   .panel>div[style*="overflow-x:auto"]{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:9px}
   th,td{padding:10px 8px;font-size:12px;white-space:nowrap}
-  select,button,input{font-size:13px;max-width:100%}
+  select,button,input,textarea{font-size:13px;max-width:100%}
   .save-btn,.cancel-btn{width:auto;min-width:90px;margin:2px 0}
   .driver-tools{padding:13px;margin-top:15px}
   .driver-actions{flex-direction:column;align-items:stretch}
   .driver-actions .mini-btn{width:100%;min-height:40px}
   .pin-note{line-height:1.5}
+  .formgrid{grid-template-columns:1fr;}
 }
 @media (max-width: 430px){
   .admin-stats{grid-template-columns:1fr 1fr}
@@ -86,7 +90,6 @@ html,body{max-width:100%;overflow-x:hidden}
   #loginPanel h2{font-size:21px}
   #loginPanel p{font-size:13px!important;line-height:1.5}
 }
-
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -119,6 +122,7 @@ html,body{max-width:100%;overflow-x:hidden}
     <div class="tabs">
         <button class="tab-btn active" id="btnTabBookings" onclick="switchTab('bookings')"><i class="fa-solid fa-table-list"></i> Manage Bookings</button>
         <button class="tab-btn" id="btnTabDrivers" onclick="switchTab('drivers')"><i class="fa-solid fa-location-crosshairs"></i> Live Drivers & Map</button>
+        <button class="tab-btn" id="btnTabPackages" onclick="switchTab('packages')"><i class="fa-solid fa-map-location-dot"></i> Manage Packages</button>
     </div>
     
     <!-- Tab 1: Bookings -->
@@ -179,6 +183,48 @@ html,body{max-width:100%;overflow-x:hidden}
             </div>
         </div>
     </div>
+
+    <!-- Tab 3: Manage Tour Packages -->
+    <div class="panel" id="tabPackages" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0;"><i class="fa-solid fa-box"></i> Live Tour Packages</h3>
+            <button class="save-btn" style="width:auto; margin:0;" onclick="resetPackageForm()">+ Add New Package</button>
+        </div>
+
+        <!-- Package Edit/Add Form -->
+        <div id="packageFormContainer" style="background:linear-gradient(145deg,#f8fbff,#fff7ff); padding:20px; border-radius:16px; border:1px solid #e1e8f0; margin-bottom:20px; display:none; box-shadow:0 8px 20px rgba(11,116,201,.07);">
+            <h3 id="pkgFormTitle" style="margin-top:0; color:#0b74c9;">Add New Package</h3>
+            <input type="hidden" id="pkgId">
+            <div class="formgrid">
+                <div><label>Package Title/Name</label><input type="text" id="pkgName" placeholder="e.g. Jaipur Darshan (2N/3D)" style="width:100%;"></div>
+                <div><label>Package Price</label><input type="text" id="pkgPrice" placeholder="e.g. ₹5,499" style="width:100%;"></div>
+                <div><label>Default Recommended Car</label><input type="text" id="pkgCar" placeholder="e.g. Maruti Dzire" style="width:100%;"></div>
+                <div><label>Inclusions (Included Items)</label><input type="text" id="pkgIncludes" placeholder="e.g. AC Vehicle, Toll, Fuel" style="width:100%;"></div>
+            </div>
+            <div style="margin-top:15px;">
+                <label style="font-weight:bold; font-size:13px; color:#555; display:block; margin-bottom:5px;">Full Itinerary (Type Day by Day)</label>
+                <textarea id="pkgItinerary" rows="5" placeholder="Day 1: Arrival & Check-in...&#10;Day 2: Full day sightseeing...&#10;Day 3: Departure." style="width:100%;"></textarea>
+                <small style="color:#6b7280; font-size:12px;">Aap yahan <b> &lt;br&gt; </b> ka use kar sakte hain naye line ke liye.</small>
+            </div>
+            <div style="margin-top:15px;">
+                <label style="font-weight:bold; font-size:13px; color:#555; display:block; margin-bottom:5px;">Gallery Images URLs (Paste multiple links, 1 link per line)</label>
+                <textarea id="pkgImages" rows="4" placeholder="https://image-url-1.jpg&#10;https://image-url-2.jpg&#10;https://image-url-3.jpg" style="width:100%;"></textarea>
+                <small style="color:#e74c3c; font-size:12px;"><b>Note:</b> Pehli link card par cover photo bankar dikhegi. Baaki links customer ki screen par auto-slider (Gallery) ban jayengi!</small>
+            </div>
+            <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="save-btn" onclick="savePackage()" style="width:auto; padding:10px 25px; font-size:16px;">Save & Publish Package</button>
+                <button class="cancel-btn" onclick="document.getElementById('packageFormContainer').style.display='none'" style="width:auto; padding:10px 25px; font-size:16px; background:#6b7280;">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Live Packages List Table -->
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>Cover Image</th><th>Package Name & Car</th><th>Price</th><th>Inclusions</th><th>Actions</th></tr></thead>
+                <tbody id="packagesTable"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -193,7 +239,8 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
-let adminMap,mapMarkers=[],bookingsCache=[],driversCache=[],bookingsUnsub=null,driversUnsub=null;
+let adminMap,mapMarkers=[],bookingsCache=[],driversCache=[],packagesCache=[];
+let bookingsUnsub=null,driversUnsub=null,packagesUnsub=null;
 let bookingSnapshotReady=false;
 let alertAudioCtx=null;
 let bookingAlertEnabled=false;
@@ -201,10 +248,7 @@ let audioUnlocking=false;
 
 function getAudioContext(){
   const AC=window.AudioContext||window.webkitAudioContext;
-  if(!AC){
-    alert('Is browser mein Web Audio support nahi hai. Chrome/Edge use karein.');
-    return null;
-  }
+  if(!AC){ alert('Is browser mein Web Audio support nahi hai. Chrome/Edge use karein.'); return null; }
   if(!alertAudioCtx) alertAudioCtx=new AC();
   return alertAudioCtx;
 }
@@ -212,29 +256,19 @@ function getAudioContext(){
 async function enableBookingAlerts(){
   if(audioUnlocking) return;
   audioUnlocking=true;
-
   try{
     const ctx=getAudioContext();
     if(!ctx) return;
-
-    if(ctx.state==='suspended'){
-      await ctx.resume();
-    }
-
-    if(ctx.state!=='running'){
-      throw new Error('AudioContext state: '+ctx.state);
-    }
-
+    if(ctx.state==='suspended') await ctx.resume();
+    if(ctx.state!=='running') throw new Error('AudioContext state: '+ctx.state);
     bookingAlertEnabled=true;
     updateSoundButton('🔔 Booking Sound ON');
-
-    // User-click ke turant baad test Ding-Dong.
     playDingDong();
   }catch(e){
     console.error('Audio unlock failed:',e);
     bookingAlertEnabled=false;
     updateSoundButton('🔔 Enable Booking Sound');
-    alert('Sound start nahi hua. Chrome/Edge mein page ko ek baar click karke dobara button dabayein. System volume aur tab mute bhi check karein.');
+    alert('Sound start nahi hua. Chrome/Edge mein page ko ek baar click karke dobara button dabayein.');
   }finally{
     audioUnlocking=false;
   }
@@ -244,29 +278,20 @@ function updateSoundButton(text){
   const btn=document.getElementById('alertSoundBtn');
   if(!btn) return;
   btn.textContent=text;
-  if(bookingAlertEnabled){
-    btn.style.background='#27ae60';
-    btn.style.color='#fff';
-  }else{
-    btn.style.background='#f5b82e';
-    btn.style.color='#071a35';
-  }
+  if(bookingAlertEnabled){ btn.style.background='#27ae60'; btn.style.color='#fff'; }
+  else{ btn.style.background='#f5b82e'; btn.style.color='#071a35'; }
 }
 
 function playTone(ctx,frequency,start,duration,volume){
   const osc=ctx.createOscillator();
   const gain=ctx.createGain();
-
   osc.type='sine';
   osc.frequency.setValueAtTime(frequency,start);
-
   gain.gain.setValueAtTime(0.0001,start);
   gain.gain.exponentialRampToValueAtTime(volume,start+0.025);
   gain.gain.exponentialRampToValueAtTime(0.0001,start+duration);
-
   osc.connect(gain);
   gain.connect(ctx.destination);
-
   osc.start(start);
   osc.stop(start+duration+0.03);
 }
@@ -275,20 +300,12 @@ function playDingDong(){
   try{
     const ctx=getAudioContext();
     if(!ctx) return;
-
-    if(ctx.state==='suspended'){
-      ctx.resume().catch(e=>console.warn('Audio resume failed',e));
-      return;
-    }
+    if(ctx.state==='suspended'){ ctx.resume().catch(e=>console.warn('Audio resume failed',e)); return; }
     if(ctx.state!=='running') return;
-
     const now=ctx.currentTime+0.01;
-    // Clear Ding + Dong, thoda louder aur longer.
     playTone(ctx,880,now,0.42,0.42);
     playTone(ctx,659.25,now+0.43,0.62,0.46);
-  }catch(e){
-    console.warn('Ding-Dong failed',e);
-  }
+  }catch(e){ console.warn('Ding-Dong failed',e); }
 }
 
 function playBookingAlert(){
@@ -303,28 +320,53 @@ function login(){
     initMap(); subscribeData();
   } else alert("Access Denied! Wrong PIN.");
 }
+
 function switchTab(tab){
   document.getElementById('tabBookings').style.display=tab==='bookings'?'block':'none';
   document.getElementById('tabDrivers').style.display=tab==='drivers'?'block':'none';
+  document.getElementById('tabPackages').style.display=tab==='packages'?'block':'none';
+  
   document.getElementById('btnTabBookings').classList.toggle('active',tab==='bookings');
   document.getElementById('btnTabDrivers').classList.toggle('active',tab==='drivers');
+  document.getElementById('btnTabPackages').classList.toggle('active',tab==='packages');
+  
   if(tab==='drivers'&&adminMap) setTimeout(()=>adminMap.invalidateSize(),100);
   renderAll();
 }
+
 function initMap(){
   if(adminMap) return;
   adminMap=L.map("adminMap").setView([26.9124,75.7873],10);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(adminMap);
 }
+
 function subscribeData(){
   bookingSnapshotReady=false;
-  if(bookingsUnsub) bookingsUnsub(); if(driversUnsub) driversUnsub();
+  if(bookingsUnsub) bookingsUnsub(); 
+  if(driversUnsub) driversUnsub();
+  if(packagesUnsub) packagesUnsub();
+
   bookingsUnsub=db.collection('bookings').onSnapshot(s=>{
     if(bookingSnapshotReady){ const added=s.docChanges().filter(c=>c.type==='added'); if(added.length) playBookingAlert(); }
     bookingsCache=[];s.forEach(d=>bookingsCache.push(d.data()));bookingsCache.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));renderAll(); bookingSnapshotReady=true;
   },e=>alert("Firebase bookings error. Check Firestore Rules."));
-  driversUnsub=db.collection('drivers').onSnapshot(s=>{driversCache=[];s.forEach(d=>driversCache.push(d.data()));renderAll();},e=>alert("Firebase drivers error. Check Firestore Rules."));
+  
+  driversUnsub=db.collection('drivers').onSnapshot(s=>{
+      driversCache=[];s.forEach(d=>driversCache.push(d.data()));renderAll();
+  },e=>console.error("Firebase drivers error.", e));
+
+  // NEW: Subscribe to Packages Live
+  packagesUnsub=db.collection('packages').onSnapshot(s=>{
+      packagesCache=[];
+      s.forEach(d=>{
+          let p = d.data();
+          p.id = d.id; // Get Firestore document ID
+          packagesCache.push(p);
+      });
+      renderPackages();
+  },e=>console.error("Firebase packages error.", e));
 }
+
 function loadData(){ renderAll(); }
 function renderAll(){
   document.getElementById('totalB').innerText=bookingsCache.length;
@@ -332,8 +374,11 @@ function renderAll(){
   document.getElementById('conB').innerText=bookingsCache.filter(b=>b.status==='Confirmed').length;
   document.getElementById('canB').innerText=bookingsCache.filter(b=>b.status==='Cancelled').length;
   document.getElementById('onDutyD').innerText=driversCache.filter(d=>d.onDuty===true).length;
-  renderBookings(); renderDrivers();
+  renderBookings(); 
+  renderDrivers();
+  renderPackages();
 }
+
 function renderBookings(){
   let html='';
   if(!bookingsCache.length) html='<tr><td colspan="7" style="text-align:center;padding:20px;color:#777;">No bookings found.</td></tr>';
@@ -350,6 +395,7 @@ function renderBookings(){
   });
   document.getElementById('adminTable').innerHTML=html;
 }
+
 function renderDrivers(){
   mapMarkers.forEach(m=>adminMap&&adminMap.removeLayer(m)); mapMarkers=[]; let html='',bounds=[];
   if(!driversCache.length) html='<tr><td colspan="5" style="text-align:center;">No registered drivers.</td></tr>';
@@ -365,10 +411,108 @@ function renderDrivers(){
   document.getElementById('liveDriversTable').innerHTML=html;
   const mgmt=document.getElementById('driverManagementTable');
   if(mgmt){
-    mgmt.innerHTML=driversCache.length?driversCache.map(d=>`<tr><td><b>${d.id}</b><br>${d.name}</td><td>${d.mobile}</td><td>${d.vehicleType}<br><small>${d.vehicleNo}</small></td><td>${d.onDuty?'🟢 Active / On Duty':'⚪ Active / Off Duty'}</td><td><div class="driver-actions"><button class="mini-btn reset-btn" onclick="resetDriverPin('${d.id}')"><i class="fa-solid fa-key"></i> Reset PIN</button><button class="mini-btn delete-driver-btn" onclick="deleteDriver('${d.id}')"><i class="fa-solid fa-trash"></i> Remove Driver</button></div></td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;">No registered drivers.</td></tr>';
+    mgmt.innerHTML=driversCache.length?driversCache.map(d=>`<tr><td><b>${d.id}</b><br>${d.name}</td><td>${d.mobile}</td><td>${d.vehicleType}<br><small>${d.vehicleNo}</small></td><td>${d.onDuty?'🟢 Active / On Duty':'⚪ Active / Off Duty'}</td><td><div class="driver-actions"><button class="mini-btn reset-btn" onclick="resetDriverPin('${d.id}')"><i class="fa-solid fa-key"></i> Reset PIN</button><button class="mini-btn delete-driver-btn" onclick="deleteDriver('${d.id}')"><i class="fa-solid fa-trash"></i> Remove</button></div></td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;">No registered drivers.</td></tr>';
   }
   if(bounds.length&&adminMap) adminMap.fitBounds(bounds,{padding:[50,50],maxZoom:14});
 }
+
+// ===== MANAGE PACKAGES LOGIC =====
+function renderPackages(){
+    const tbody = document.getElementById('packagesTable');
+    if(!tbody) return;
+    if(!packagesCache.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No packages found. Click "+ Add New Package" to create one.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = packagesCache.map(p => {
+        let firstImg = (p.images && p.images.length > 0) ? p.images[0] : '';
+        return `<tr>
+            <td><img src="${firstImg}" style="width:100px; height:60px; object-fit:cover; border-radius:8px; border:2px solid #eef5fb;" onerror="this.src='https://via.placeholder.com/100x60?text=No+Image'"></td>
+            <td><b>${p.name}</b><br><small><i class="fa-solid fa-car" style="color:#0b74c9;"></i> ${p.car}</small></td>
+            <td><b style="color:#27ae60; font-size:16px;">${p.price}</b></td>
+            <td><small style="color:#667085;">${p.includes.substring(0,50)}...</small></td>
+            <td>
+                <div class="driver-actions">
+                  <button class="mini-btn reset-btn" onclick="editPackage('${p.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
+                  <button class="mini-btn delete-driver-btn" onclick="deletePackage('${p.id}')"><i class="fa-solid fa-trash"></i> Drop</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function resetPackageForm() {
+    document.getElementById('pkgId').value = '';
+    document.getElementById('pkgName').value = '';
+    document.getElementById('pkgPrice').value = '';
+    document.getElementById('pkgCar').value = '';
+    document.getElementById('pkgIncludes').value = '';
+    document.getElementById('pkgItinerary').value = '';
+    document.getElementById('pkgImages').value = '';
+    document.getElementById('packageFormContainer').style.display = 'block';
+    document.getElementById('pkgFormTitle').innerText = 'Create New Tour Package';
+}
+
+function editPackage(id) {
+    const p = packagesCache.find(x => x.id === id);
+    if(!p) return;
+    document.getElementById('pkgId').value = p.id;
+    document.getElementById('pkgName').value = p.name || '';
+    document.getElementById('pkgPrice').value = p.price || '';
+    document.getElementById('pkgCar').value = p.car || '';
+    document.getElementById('pkgIncludes').value = p.includes || '';
+    document.getElementById('pkgItinerary').value = p.itinerary || '';
+    document.getElementById('pkgImages').value = (p.images || []).join('\n'); // Join arrays with newline
+    document.getElementById('packageFormContainer').style.display = 'block';
+    document.getElementById('pkgFormTitle').innerText = 'Edit Tour Package';
+    window.scrollTo({ top: document.getElementById('packageFormContainer').offsetTop - 20, behavior: 'smooth' });
+}
+
+async function savePackage() {
+    const id = document.getElementById('pkgId').value;
+    const name = document.getElementById('pkgName').value.trim();
+    const price = document.getElementById('pkgPrice').value.trim();
+    const car = document.getElementById('pkgCar').value.trim();
+    const includes = document.getElementById('pkgIncludes').value.trim();
+    const itinerary = document.getElementById('pkgItinerary').value.trim();
+    const imagesRaw = document.getElementById('pkgImages').value.trim();
+
+    if(!name || !price) return alert("Package Name and Price are mandatory!");
+
+    // Convert newlines into an array of image links
+    const images = imagesRaw.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+
+    const pkgData = {
+        name, price, car, includes, itinerary, images,
+        updatedAt: new Date().getTime()
+    };
+
+    try {
+        if(id) {
+            await db.collection('packages').doc(id).update(pkgData);
+            alert("Package Updated Successfully!");
+        } else {
+            await db.collection('packages').add(pkgData);
+            alert("New Package Created Successfully!");
+        }
+        document.getElementById('packageFormContainer').style.display = 'none';
+    } catch(e) {
+        console.error(e);
+        alert("Error saving package. Please check your internet and Firestore rules.");
+    }
+}
+
+async function deletePackage(id) {
+    if(!confirm("Are you sure you want to completely DELETE this package?")) return;
+    try {
+        await db.collection('packages').doc(id).delete();
+    } catch(e) {
+        console.error(e);
+        alert("Error deleting package.");
+    }
+}
+// ===== END MANAGE PACKAGES LOGIC =====
+
 async function resetDriverPin(id){
   const d=driversCache.find(x=>x.id===id); if(!d)return;
   const pin=prompt(`New 4-digit PIN for ${d.name} (${d.id}):`);
