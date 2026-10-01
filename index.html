@@ -21,13 +21,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(7,26,53,.97
 .nav-links button,.nav-links a{background:none;border:0;color:#fff;padding:10px 15px;border-radius:10px;text-decoration:none;cursor:pointer;font-weight:600;font-size:14px;transition:0.3s}
 .nav-links button:hover,.nav-links .active{color:#f5b82e}
 .portal-btn{background:linear-gradient(135deg,#0b74c9,#085a9c)!important;border-radius:20px!important;padding:8px 18px!important}
+.menu-btn{display:none;background:#f5b82e;border:0;border-radius:10px;padding:10px 15px;font-size:20px;color:#071a35;cursor:pointer}
 
-.hero{height:90vh;min-height:600px;position:relative;background:#071a35;display:flex;align-items:center;padding:0 5%;}
-.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.6;}
+.mobile-drawer{position:fixed;display:flex;flex-direction:column;gap:10px;right:0;top:0;width:min(300px,80vw);height:100vh;background:#071a35;z-index:10000;padding:80px 20px 20px;transform:translateX(105%);transition:transform 0.3s ease;box-shadow:-5px 0 25px rgba(0,0,0,0.5)}
+.mobile-drawer.open{transform:none}
+.mobile-drawer button,.mobile-drawer a{padding:14px;border:0;border-radius:12px;background:rgba(255,255,255,0.08);color:#fff;text-align:left;text-decoration:none;font-weight:600;font-size:16px;cursor:pointer}
+
+.hero{height:90vh;min-height:600px;position:relative;background:#071a35;overflow:hidden;display:flex;align-items:center;padding:0 5%;}
+.hero-slide{position:absolute;inset:0;opacity:0;transition:opacity 1s ease-in-out}
+.hero-slide.active{opacity:1}
+.hero-slide img{width:100%;height:100%;object-fit:cover;opacity:0.6}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.8),rgba(0,0,0,0.2) 70%,rgba(0,0,0,0.6))}
 .hero-content{position:relative;z-index:3;color:#fff;max-width:800px;margin-top:50px;}
-.hero-content h1{font-size:clamp(40px,6vw,70px);line-height:1.1;margin:0 0 20px}
+.hero-content h1{font-size:clamp(36px,6vw,65px);line-height:1.1;margin:0 0 20px}
 .hero-content span{color:#f5b82e}
-.hero-content p{font-size:clamp(18px,2vw,22px);margin-bottom:30px}
+.hero-content p{font-size:clamp(16px,2vw,22px);margin-bottom:30px}
 .btn{border:0;border-radius:12px;padding:15px 25px;font-weight:700;cursor:pointer;font-size:16px;transition:0.3s}
 .gold{background:#f5b82e;color:#071a35;box-shadow:0 10px 20px rgba(245,184,46,0.3)}
 .blue{background:linear-gradient(135deg,#0b74c9,#085a9c);color:#fff;box-shadow:0 10px 20px rgba(11,116,201,0.3)}
@@ -65,21 +73,24 @@ input,select,textarea{width:100%;padding:15px;border:2px solid #e2eaf2;border-ra
 .car.selected{border-color:#0b74c9;background:#f4f9ff;box-shadow:0 10px 20px rgba(11,116,201,0.15)}
 .car img{width:100%;height:120px;object-fit:contain}
 
-.float-wa{position:fixed;bottom:30px;right:30px;background:#25d366;color:#fff;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:35px;box-shadow:0 10px 25px rgba(37,211,102,0.4);z-index:9999;text-decoration:none}
-.float-call{position:fixed;bottom:105px;right:30px;background:#0b74c9;color:#fff;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 10px 25px rgba(11,116,201,0.4);z-index:9999;text-decoration:none}
+.float-wa{position:fixed;bottom:30px;right:30px;background:#25d366;color:#fff;width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 10px 25px rgba(37,211,102,0.4);z-index:9999;text-decoration:none}
+.float-ig{position:fixed;bottom:95px;right:30px;background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);color:#fff;width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 10px 25px rgba(214,36,159,0.4);z-index:9999;text-decoration:none}
+.float-call{position:fixed;bottom:160px;right:30px;background:#0b74c9;color:#fff;width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 10px 25px rgba(11,116,201,0.4);z-index:9999;text-decoration:none}
 
 .modal-overlay{position:fixed;inset:0;background:rgba(4,16,34,0.85);z-index:10000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px)}
 .modal-content{background:#fff;padding:30px;border-radius:24px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto;text-align:left}
 
 footer{background:#041022;color:#a1b0c7;padding:50px 20px 20px;text-align:center}
 footer h2{color:#fff;margin:0 0 10px}
-@media(max-width:850px){.formgrid{grid-template-columns:1fr}}
+
+@media(max-width:850px){.nav-links{display:none}.menu-btn{display:block}.formgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<a href="tel:+919876543210" class="float-call"><i class="fa-solid fa-phone"></i></a>
-<a href="https://wa.me/919876543210?text=Hello Jakhar Travels, I want to book a cab." target="_blank" class="float-wa"><i class="fa-brands fa-whatsapp"></i></a>
+<a href="tel:+917737719144" class="float-call"><i class="fa-solid fa-phone"></i></a>
+<a href="https://www.instagram.com/aaj.adbharat?stkn=MTVjaGlwY3U5ZGkwYw==" target="_blank" class="float-ig"><i class="fa-brands fa-instagram"></i></a>
+<a href="https://wa.me/918742896068?text=Hello Jakhar Travels, I want to book a cab." target="_blank" class="float-wa"><i class="fa-brands fa-whatsapp"></i></a>
 
 <nav>
   <a class="logo" href="#" onclick="switchView('home')">
@@ -93,12 +104,23 @@ footer h2{color:#fff;margin:0 0 10px}
     <a href="driver.html" class="portal-btn">Driver Login</a>
     <a href="admin.html" class="portal-btn">Admin</a>
   </div>
+  <button class="menu-btn" onclick="toggleMenu()">☰</button>
 </nav>
 
-<!-- HOME & PACKAGES VIEW -->
+<div id="drawer" class="mobile-drawer">
+  <button onclick="switchView('home'); toggleMenu()">🏠 Home</button>
+  <button onclick="switchView('book'); toggleMenu()">🚕 Book Taxi</button>
+  <button onclick="switchView('mybooking'); toggleMenu()">🎫 Track Booking</button>
+  <a href="driver.html" style="text-decoration:none; padding:14px; border-radius:12px; background:rgba(255,255,255,0.08); color:#fff; font-weight:600;">🚗 Driver Login</a>
+  <a href="admin.html" style="text-decoration:none; padding:14px; border-radius:12px; background:rgba(255,255,255,0.08); color:#fff; font-weight:600;">⚙ Admin Portal</a>
+</div>
+
 <div id="view-home" class="page-view active" style="padding-top:0;">
   <div class="hero">
-    <img src="https://images.unsplash.com/photo-1549317336-206569e8475c?auto=format&fit=crop&w=1600&q=80">
+    <div class="hero-slide active"><img src="https://images.unsplash.com/photo-1549317336-206569e8475c?auto=format&fit=crop&w=1600&q=80"></div>
+    <div class="hero-slide"><img src="https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1600&q=80"></div>
+    <div class="hero-slide"><img src="https://images.unsplash.com/photo-1506461883276-594a12b11cf3?auto=format&fit=crop&w=1600&q=80"></div>
+    <div class="shade"></div>
     <div class="hero-content">
       <h1>Your Journey,<br><span>Our Responsibility</span></h1>
       <p>Affordable, Safe and Comfortable Cab Rides & Tour Packages across India.</p>
@@ -106,7 +128,6 @@ footer h2{color:#fff;margin:0 0 10px}
     </div>
   </div>
 
-  <!-- LIVE TOUR PACKAGES SECTION -->
   <div class="section" style="background:#f9fbfc; max-width:100%;">
     <div style="max-width:1300px; margin:auto;">
       <h2 class="section-title">Exclusive Tour Packages</h2>
@@ -115,7 +136,6 @@ footer h2{color:#fff;margin:0 0 10px}
     </div>
   </div>
 
-  <!-- TOP DESTINATIONS WITH SLIDER -->
   <div class="section">
     <h2 class="section-title">Popular Destinations 🇮🇳</h2>
     <p class="section-sub">Har location ki real gallery photos swipe karke dekhein.</p>
@@ -123,7 +143,6 @@ footer h2{color:#fff;margin:0 0 10px}
   </div>
 </div>
 
-<!-- BOOK TAXI VIEW -->
 <div id="view-book" class="page-view">
   <div class="book-wrap">
     <div class="panel">
@@ -168,7 +187,6 @@ footer h2{color:#fff;margin:0 0 10px}
   </div>
 </div>
 
-<!-- TRACK BOOKING VIEW -->
 <div id="view-mybooking" class="page-view">
   <div class="book-wrap" style="max-width:800px; text-align:center;">
     <div class="panel">
@@ -182,33 +200,22 @@ footer h2{color:#fff;margin:0 0 10px}
   </div>
 </div>
 
-<!-- PACKAGE DETAILS MODAL -->
 <div class="modal-overlay" id="packageModal">
   <div class="modal-content">
     <button onclick="document.getElementById('packageModal').style.display='none'" style="float:right; background:none; border:none; font-size:24px; cursor:pointer; color:#e74c3c;">✕</button>
     <h2 id="pkgTitle" style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; color:#071a35;">Package Name</h2>
-    
     <div style="max-height:35vh; overflow-y:auto; background:#f9fbfc; padding:15px; border-radius:10px; border:1px solid #e2eaf2; margin-bottom:15px; font-size:14px; line-height:1.6;" id="pkgItinerary"></div>
-    
-    <div style="background:#f9fbfc; padding:12px; border-radius:8px; border:1px dashed #0b74c9; margin-bottom:15px; font-size:13px;">
-      <b>Included:</b> <span id="pkgIncludes"></span>
-    </div>
-
+    <div style="background:#f9fbfc; padding:12px; border-radius:8px; border:1px dashed #0b74c9; margin-bottom:15px; font-size:13px;"><b>Included:</b> <span id="pkgIncludes"></span></div>
     <h3 style="font-size:16px;">Select Vehicle Type:</h3>
     <select id="pkgCarSelect" style="margin-bottom:15px; border:2px solid #0b74c9; font-weight:bold;"></select>
-    
     <div style="display:flex; justify-content:space-between; align-items:center; background:#e8f8f5; padding:15px; border-radius:10px;">
       <b style="color:#071a35;">Package Price:</b>
       <span id="pkgFinalPrice" style="font-size:24px; font-weight:900; color:#27ae60;">₹5,499</span>
     </div>
-
-    <button class="btn" style="width:100%; margin-top:20px; background:#25d366; color:#fff;" onclick="bookPackageWhatsApp()">
-      <i class="fa-brands fa-whatsapp"></i> Book via WhatsApp
-    </button>
+    <button class="btn" style="width:100%; margin-top:20px; background:#25d366; color:#fff;" onclick="bookPackageWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Book via WhatsApp</button>
   </div>
 </div>
 
-<!-- SUCCESS MODAL -->
 <div class="modal-overlay" id="successModal">
   <div class="modal-content" style="text-align:center;">
     <i class="fa-solid fa-circle-check" style="font-size:60px; color:#10b981; margin-bottom:15px;"></i>
@@ -236,6 +243,17 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const ADMIN_WA = '918742896068';
+
+function toggleMenu() { document.getElementById('drawer').classList.toggle('open'); }
+
+let heroIdx = 0;
+const slides = document.querySelectorAll('.hero-slide');
+setInterval(() => {
+    slides[heroIdx].classList.remove('active');
+    heroIdx = (heroIdx + 1) % slides.length;
+    slides[heroIdx].classList.add('active');
+}, 4000);
 
 const vehicles = [
     {name:"Maruti Swift / Dzire", seats:"4+1 Seat", rate:13, img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5PvNctWh0_BTglwgPJtSCY6Rk83ngxkt9sVcbUFSRIw&s=10"},
@@ -244,31 +262,68 @@ const vehicles = [
     {name:"Toyota Innova", seats:"6+1 Premium SUV", rate:20, img:"https://www.jazzycars.in/wp-content/uploads/2023/07/WhatsApp-Image-2023-07-28-at-4.17.00-PM.jpeg"}
 ];
 
-const placesData = [
-  {name: "Taj Mahal, Agra", imgs: ["https://upload.wikimedia.org/wikipedia/commons/c/c8/Taj_Mahal_in_March_2004.jpg", "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600&q=80"]},
-  {name: "Hawa Mahal, Jaipur", imgs: ["https://upload.wikimedia.org/wikipedia/commons/9/93/Hawa_Mahal_2011.jpg", "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=600&q=80"]},
-  {name: "Udaipur, Rajasthan", imgs: ["https://images.unsplash.com/photo-1598091383021-15ddea10925d?auto=format&fit=crop&w=600&q=80", "https://upload.wikimedia.org/wikipedia/commons/6/6e/City_Palace%2C_Udaipur.jpg"]},
-  {name: "Manali, Himachal", imgs: ["https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=600&q=80", "https://upload.wikimedia.org/wikipedia/commons/2/23/Manali_City.jpg"]},
-  {name: "Goa Beaches", imgs: ["https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80", "https://upload.wikimedia.org/wikipedia/commons/a/a2/Colva_Beach_-_Goa_-_India.JPG"]},
-  {name: "Jaisalmer Fort", imgs: ["https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=600&q=80", "https://upload.wikimedia.org/wikipedia/commons/5/52/Jaisalmer_Fort_-_Main_entrance.jpg"]}
+const defaultPlaces = [
+  {name: "Taj Mahal, Agra", imgs: ["https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1585135497239-4d8342410a30?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Hawa Mahal, Jaipur", imgs: ["https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Gateway of India, Mumbai", imgs: ["https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Kerala Backwaters", imgs: ["https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Goa Beaches", imgs: ["https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Manali, Himachal", imgs: ["https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1590059502117-6447781b0a70?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Varanasi Ghats", imgs: ["https://images.unsplash.com/photo-1561359313-0639aad49ff6?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1571536802807-30451e3955d8?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Udaipur City Palace", imgs: ["https://images.unsplash.com/photo-1598091383021-15ddea10925d?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1615836245337-f5b9b2247d2d?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Jaisalmer Fort", imgs: ["https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Darjeeling, WB", imgs: ["https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1514222134-b57cbb8ce073?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Hampi, Karnataka", imgs: ["https://images.unsplash.com/photo-1620766182996-e17f465d33ca?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Munnar, Kerala", imgs: ["https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1589182337358-2fabedd73e9d?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Rishikesh, UK", imgs: ["https://images.unsplash.com/photo-1589182337358-2fabedd73e9d?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1506461883276-594a12b11cf3?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Mysore Palace", imgs: ["https://images.unsplash.com/photo-1600100396654-a34f8d14cf36?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1590059502117-6447781b0a70?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Golden Temple", imgs: ["https://images.unsplash.com/photo-1588534149022-772986427d6d?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Ooty, Tamil Nadu", imgs: ["https://images.unsplash.com/photo-1589182337358-2fabedd73e9d?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Shimla", imgs: ["https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1590059502117-6447781b0a70?auto=format&fit=crop&w=600&q=80"]},
+  {name: "Jodhpur", imgs: ["https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=600&q=80", "https://images.unsplash.com/photo-1620766182996-e17f465d33ca?auto=format&fit=crop&w=600&q=80"]}
 ];
 
-// RENDER DESTINATION SLIDERS
-document.getElementById('destGrid').innerHTML = placesData.map((p, idx) => `
-  <div class="card">
-    <div class="card-gallery" id="gallery-${idx}">
-      ${p.imgs.map((img, i) => `<img src="${img}" class="${i===0?'active':''}" loading="lazy">`).join('')}
-      ${p.imgs.length > 1 ? `<button class="gallery-btn gallery-prev" onclick="moveSlide(${idx}, -1)">‹</button><button class="gallery-btn gallery-next" onclick="moveSlide(${idx}, 1)">›</button>` : ''}
-    </div>
-    <div class="card-info">
-      <h3>${p.name}</h3>
-      <p>Explore this destination with our comfortable cabs.</p>
-      <button class="btn blue" style="width:100%" onclick="switchView('book'); document.getElementById('drop').value='${p.name}';">Book Cab Here</button>
-    </div>
-  </div>`).join('');
+db.collection('destinations').onSnapshot(snapshot => {
+    let customDests = {};
+    snapshot.forEach(doc => { let d = doc.data(); customDests[d.name] = d.images; });
+
+    let finalPlaces = defaultPlaces.map(p => {
+        if(customDests[p.name]) {
+            return { name: p.name, imgs: customDests[p.name] };
+        }
+        return p;
+    });
+
+    snapshot.forEach(doc => {
+        let d = doc.data();
+        if(!defaultPlaces.some(p => p.name === d.name)) {
+            finalPlaces.push({ name: d.name, imgs: d.images });
+        }
+    });
+
+    renderDestinations(finalPlaces);
+}, err => {
+    renderDestinations(defaultPlaces);
+});
+
+function renderDestinations(places) {
+    document.getElementById('destGrid').innerHTML = places.map((p, idx) => `
+      <div class="card">
+        <div class="card-gallery" id="gallery-${idx}">
+          ${p.imgs.map((img, i) => `<img src="${img}" class="${i===0?'active':''}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1549317336-206569e8475c?auto=format&fit=crop&w=600&q=80'">`).join('')}
+          ${p.imgs.length > 1 ? `<button class="gallery-btn gallery-prev" onclick="moveSlide(${idx}, -1)">‹</button><button class="gallery-btn gallery-next" onclick="moveSlide(${idx}, 1)">›</button>` : ''}
+        </div>
+        <div class="card-info">
+          <h3>${p.name}</h3>
+          <p>Explore this destination with our comfortable cabs.</p>
+          <button class="btn blue" style="width:100%" onclick="switchView('book'); document.getElementById('drop').value='${p.name}';">Book Cab Here</button>
+        </div>
+      </div>`).join('');
+}
 
 function moveSlide(cardIdx, dir) {
     const gal = document.getElementById(`gallery-${cardIdx}`);
+    if(!gal) return;
     const imgs = gal.querySelectorAll('img');
     let activeIdx = Array.from(imgs).findIndex(img => img.classList.contains('active'));
     imgs[activeIdx].classList.remove('active');
@@ -276,20 +331,18 @@ function moveSlide(cardIdx, dir) {
     imgs[activeIdx].classList.add('active');
 }
 
-// LIVE PACKAGES FROM FIREBASE
 db.collection('packages').onSnapshot(snapshot => {
     let pkgs = [];
     snapshot.forEach(doc => { let d = doc.data(); d.id = doc.id; pkgs.push(d); });
-    
     const grid = document.getElementById('livePackagesGrid');
-    if(!pkgs.length) { grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#667085;">No tour packages available right now. Check back soon!</p>'; return; }
+    if(!pkgs.length) { grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#667085;">No tour packages available right now.</p>'; return; }
     
     grid.innerHTML = pkgs.map((pkg, idx) => {
-        let imgs = (pkg.images && pkg.images.length > 0) ? pkg.images : ['https://via.placeholder.com/400x250?text=Tour+Package'];
+        let imgs = (pkg.images && pkg.images.length > 0) ? pkg.images : ['https://images.unsplash.com/photo-1549317336-206569e8475c?auto=format&fit=crop&w=600&q=80'];
         return `
         <div class="card">
             <div class="card-gallery" id="pkg-gallery-${idx}">
-                ${imgs.map((img, i) => `<img src="${img}" class="${i===0?'active':''}" loading="lazy">`).join('')}
+                ${imgs.map((img, i) => `<img src="${img}" class="${i===0?'active':''}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1549317336-206569e8475c?auto=format&fit=crop&w=600&q=80'">`).join('')}
                 ${imgs.length > 1 ? `<button class="gallery-btn gallery-prev" onclick="movePkgSlide(${idx}, -1)">‹</button><button class="gallery-btn gallery-next" onclick="movePkgSlide(${idx}, 1)">›</button>` : ''}
             </div>
             <div class="card-info">
@@ -316,27 +369,20 @@ async function openLivePkg(id) {
     let doc = await db.collection('packages').doc(id).get();
     if(!doc.exists) return;
     activeLivePkg = doc.data();
-    
     document.getElementById('pkgTitle').innerText = activeLivePkg.name;
     document.getElementById('pkgItinerary').innerHTML = activeLivePkg.itinerary || 'No itinerary specified.';
     document.getElementById('pkgIncludes').innerText = activeLivePkg.includes || 'As per package terms.';
     document.getElementById('pkgFinalPrice').innerText = activeLivePkg.price;
-    
     document.getElementById('pkgCarSelect').innerHTML = vehicles.map(v => `<option value="${v.name}">${v.name} (${v.seats})</option>`).join('');
     document.getElementById('packageModal').style.display = 'flex';
 }
 
 function bookPackageWhatsApp() {
     let car = document.getElementById('pkgCarSelect').value;
-    let msg = `Hello Jakhar Travels! I want to book this package:
-*Package:* ${activeLivePkg.name}
-*Selected Car:* ${car}
-*Price:* ${activeLivePkg.price}
-Please confirm my booking.`;
-    window.open(`https://wa.me/918742896068?text=${encodeURIComponent(msg)}`, '_blank');
+    let msg = `Hello Jakhar Travels! I want to book this package:\n*Package:* ${activeLivePkg.name}\n*Selected Car:* ${car}\n*Price:* ${activeLivePkg.price}\nPlease confirm my booking.`;
+    window.open(`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
-// CARS RENDER
 document.getElementById('cars').innerHTML = vehicles.map((v,i) => `
   <div class="car" id="car${i}" onclick="selectCar(${i})">
     <img src="${v.img}"><h3>${v.name}</h3>
@@ -380,12 +426,10 @@ async function calcRoute() {
     try {
         if(!pickCoord) pickCoord = await geocode(p); if(!dropCoord) dropCoord = await geocode(d);
         if(!pickCoord || !dropCoord) return alert("Locations not found.");
-        
         const rt = await (await fetch(`https://router.project-osrm.org/route/v1/driving/${pickCoord.lon},${pickCoord.lat};${dropCoord.lon},${dropCoord.lat}?overview=full&geometries=geojson`)).json();
         if(routeLayer) routeLayer.remove(); 
         routeLayer = L.geoJSON(rt.routes[0].geometry, {style: {color: '#0b74c9', weight: 6}}).addTo(map); 
         map.fitBounds(routeLayer.getBounds(), {padding: [30, 30]});
-        
         let baseKm = rt.routes[0].distance/1000;
         document.getElementById("distance").dataset.basekm = baseKm;
         let km = baseKm * trip;
@@ -414,7 +458,6 @@ function updateSel() {
 function confirmBooking() {
     const name = document.getElementById("passName").value, phone = document.getElementById("passPhone").value;
     if(!name || phone.length < 10) return alert("Fill Name and Mobile properly.");
-    
     let latestBookingId = "JTT-" + Math.floor(100000 + Math.random() * 900000);
     const newBooking = {
         id: latestBookingId, name, phone, 
@@ -423,7 +466,6 @@ function confirmBooking() {
         car: vehicles[selected].name, distance: document.getElementById("distance").dataset.km + " km", 
         fare: "₹" + calculatedFare, payment: paymentMode, status: 'Pending', timestamp: new Date().getTime()
     };
-    
     db.collection("bookings").doc(latestBookingId).set(newBooking).then(() => {
         document.getElementById("finalDetails").innerHTML = `<b>ID:</b> ${latestBookingId}<br><b>Route:</b> ${newBooking.route}<br><b>Car:</b> ${newBooking.car}<br><b>Fare:</b> <span style="color:#27ae60;font-weight:bold;">${newBooking.fare}</span>`;
         document.getElementById("successModal").style.display = "flex";
@@ -433,7 +475,6 @@ function confirmBooking() {
 function searchMyBooking() {
     const id = document.getElementById("searchId").value.trim().toUpperCase();
     if(!id) return alert("Enter Booking ID");
-    
     db.collection("bookings").doc(id).get().then((docSnap) => {
         if (docSnap.exists) {
             const b = docSnap.data();
